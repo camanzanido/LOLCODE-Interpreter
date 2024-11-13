@@ -1,5 +1,38 @@
 import re
 from src import keyword_classifiers
+import tkinter as tk 
+from tkinter import filedialog,ttk
+
+
+root = tk.Tk()
+root.resizable(0,0)
+
+root.title('GROUP 5 | LOLCODE INTERPRETER')
+
+
+def get_file(file_label, text_editor):
+
+    filename = ''
+
+    filename = filedialog.askopenfilename( initialdir="/", title= "Select File", filetypes=( ("LOL files", "*.lol"), ("all files", "*.*") ))
+
+    if filename:
+        file_label.config(text="File opened: " + filename)
+        with open(filename, "r") as file:
+            file_text = file.read()
+            text_editor.delete(1.0, tk.END)  
+            text_editor.insert(tk.END, file_text)  
+
+
+
+def execute_btn(text_editor, disp_lexemes):
+        # Clear previous lexeme entries
+    for item in disp_lexemes.get_children():
+        disp_lexemes.delete(item)
+
+    # Initialize lexemes from the current file content
+    lexemes_init(text_editor.get("1.0", tk.END).splitlines(), disp_lexemes)
+
 
 def lexemes_matcher (line):
     token_list = []
@@ -273,12 +306,11 @@ def lexemes_matcher (line):
     return token_list
 
 
-def lexemes_init():
-  
-    file = open("input.txt", "r")
-    lines = file.readlines()
+def lexemes_init(lines, disp_lexemes):
 
-    token_dict = {}
+
+    # token_dict = {}
+    lexemes = []
 
     # Per line of the code
     for line in lines:
@@ -289,14 +321,49 @@ def lexemes_init():
             token = lexemes_matcher(line)
 
             if token != []:
-                token_dict[token[0].strip()] = token[1].strip()
+                # token_dict[token[0].strip()] = token[1].strip()
+                lexemes.append((token[0].strip(), token[1].strip()))
                 line = line.replace(token[0], "").strip()
               
             else:
                 break
+
+
+    # for key, value in token_dict.items():
+    #     print(f"{key} \t\t {value}")
+    #     disp_lexemes.insert("", "end", values=(key, value))
+        
+    # Clear the Treeview before inserting new data
+    for item in disp_lexemes.get_children():
+        disp_lexemes.delete(item)
     
-    for key, value in token_dict.items():
-        print(f"{key} \t\t {value}")
+    # Insert each lexeme into the Treeview, even repeated ones
+    for lexeme, classification in lexemes:
+        print(f"{lexeme} \t\t {classification}")
+        disp_lexemes.insert("", "end", values=(lexeme, classification))
 
 
-lexemes_init()
+file_label = tk.Label(root, text="No file selected")
+file_label.pack()
+
+content_frame = tk.Frame(root)
+content_frame.pack(side="top", fill="both", expand=True)
+
+text_editor = tk.Text(content_frame, wrap='word', height=20, width=40)
+text_editor.pack(side="left", fill="both", expand=True)
+
+disp_lexemes = ttk.Treeview(content_frame, columns=("Lexeme", "Classification"), show="headings", height=20)
+disp_lexemes.heading("Lexeme", text="Lexeme")
+disp_lexemes.heading("Classification", text="Classification")
+disp_lexemes.pack(side="left", fill="both", expand=True)
+
+button_frame = tk.Frame(root)
+button_frame.pack(side="bottom", pady=5)
+
+open_button = tk.Button(button_frame, text="Open File", command=lambda: get_file(file_label, text_editor))
+open_button.pack(side="left", padx=5)
+
+execute_button = tk.Button(button_frame, text="Execute", command=lambda: execute_btn(text_editor, disp_lexemes))
+execute_button.pack(side="left", padx=5)
+
+root.mainloop()
