@@ -1,33 +1,36 @@
-BTW start of the program
 HAI
+
+    HOW IZ I addNum x y
+        FOUND YR SUM OF x an y
+    IF U SAY SO
+
+    HOW IZ I printName person
+        VISIBLE "Hello, " + person
+        GTFO
+    IF U SAY SO
+
+    HOW IZ I printNum x
+        FOUND YR x
+    IF U SAY SO
+
+
     WAZZUP
-        BTW variable dec
-        I HAS A monde
-        I HAS A num ITZ 17
-        I HAS A name ITZ "seventeen"
-        I HAS A fnum ITZ 17.0
-        I HAS A flag ITZ WIN
-        
-        I HAS A sum ITZ SUM OF num AN 13
-        I HAS A diff ITZ DIFF OF sum AN 17
-        I HAS A prod ITZ PRODUKT OF 3 AN 4
-        I HAS A quo ITZ QUOSHUNT OF 4 AN 5
+        I HAS A name
+        I HAS A num1
+        I HAS A num2
     BUHBYE
 
-    BTW print literals and variables
-    VISIBLE "declarations"
-    VISIBLE monde BTW should be NOOB
-    VISIBLE num
-    VISIBLE name
-    VISIBLE fnum
-    VISIBLE flag
+    GIMMEH num1
+    GIMMEH num2
 
-    VISIBLE sum
-    VISIBLE diff
-    VISIBLE prod
-    VISIBLE quo
+    I IZ addNuM num1 num2
+    VISIBLE IT
 
-    BTW print expressions
-    VISIBLE SUM OF PRODUKT OF 3 AN 5 AN BIGGR OF DIFF OF 17 AN 2 AN 5
-    VISIBLE BIGGR OF PRODUKT OF 11 AN 2 AN QUOSHUNT OF SUM OF 3 AN 5 AN 2
+    GIMMEH name
+    I IZ printName name
+    VISIBLE IT
+
+    I IZ printNum SUM OF x AN 2
+    VISIBLE IT
+
 KTHXBYE
