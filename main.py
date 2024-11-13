@@ -75,7 +75,7 @@ def lexemes_matcher ():
         elif (re.search("^GIMMEH$", line) != None):
             token_dict["GIMMEH"] = "Random String"
 
-        elif (re.search("^O RLY\?$", line) != None):
+        elif (re.search(r"^O RLY\?$", line) != None):
             token_dict["O RLY?"] = "Random String"
 
         elif (re.search("^YA RLY$", line) != None):
@@ -90,7 +90,7 @@ def lexemes_matcher ():
         elif (re.search("^OIC$", line) != None):
             token_dict["OIC"] = "Random String"
 
-        elif (re.search("^WTF\?$", line) != None):
+        elif (re.search(r"^WTF\?$", line) != None):
             token_dict["WTF?"] = "Random String"
 
         elif (re.search("^OMG$", line) != None):
