@@ -274,15 +274,17 @@ def lexemes_matcher (line):
         token_list.append(keyword_classifiers.DELIM_EXPR_END)
 
     # Data Type
+    elif re.search(r"^(-)?[0-9]+\.[0-9]+\b", line) != None:
+        numbar = re.search(r"^(-)?[0-9]+\.[0-9]+\b", line).group()
+        token_list.append(numbar)
+        token_list.append(keyword_classifiers.LIT_NUMBAR)
+        
     elif re.search(r"^(-)?[0-9]+( )?", line) != None:
         numbr = re.search(r"^(-)?[0-9]+( )?", line).group()
         token_list.append(numbr)
         token_list.append(keyword_classifiers.LIT_NUMBR)
     
-    elif re.search(r"^(-)?[0-9]+\.[0-9]+( )?", line) != None:
-        numbar = re.search(r"^(-)?[0-9]+\.[0-9]+( )?", line).group()
-        token_list.append(numbar)
-        token_list.append(keyword_classifiers.LIT_NUMBAR)
+
 
     elif re.search(r'^"([^"]|:\)|:>|:o|:"|::|")*"( )?', line) != None:
         yarn = re.search(r'^"([^"]|:\)|:>|:o|:"|::)*"( )?', line).group()
