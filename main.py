@@ -6,6 +6,7 @@ from tkinter import filedialog,ttk
 # need catch deci
 
 root = tk.Tk()
+root.configure(bg="pink")
 root.resizable(0,0)
 
 root.title('GROUP 5 | LOLCODE INTERPRETER')
@@ -327,7 +328,6 @@ def lexemes_init(lines, disp_lexemes):
                 # token_dict[token[0].strip()] = token[1].strip()
                 lexemes.append((token[0].strip(), token[1].strip()))
                 line = line.replace(token[0], "").strip() #change .rep or slice nlang
-                print(f"Current: {line}")
             
             else:
                 break
@@ -361,8 +361,10 @@ disp_lexemes.heading("Lexeme", text="Lexeme")
 disp_lexemes.heading("Classification", text="Classification")
 disp_lexemes.pack(side="left", fill="both", expand=True)
 
+
 button_frame = tk.Frame(root)
 button_frame.pack(side="bottom", pady=5)
+button_frame.configure(bg = "pink")
 
 open_button = tk.Button(button_frame, text="Open File", command=lambda: get_file(file_label, text_editor))
 open_button.pack(side="left", padx=5)
