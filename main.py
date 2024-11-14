@@ -3,6 +3,7 @@ from src import keyword_classifiers
 import tkinter as tk 
 from tkinter import filedialog,ttk
 
+# need catch deci
 
 root = tk.Tk()
 root.resizable(0,0)
@@ -323,9 +324,9 @@ def lexemes_init(lines, disp_lexemes):
             if token != []:
                 # token_dict[token[0].strip()] = token[1].strip()
                 lexemes.append((token[0].strip(), token[1].strip()))
-                line = line.replace(token[0], "").strip()
+                line = line.replace(token[0], "").strip() #change .rep or slice nlang
                 print(f"Current: {line}")
-              
+            
             else:
                 break
 
