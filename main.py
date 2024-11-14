@@ -174,12 +174,12 @@ def lexemes_matcher (line):
         token_list.append(keyword_classifiers.KW_TYPECAST)
 
     # Separator
-    elif re.search("^A( )?", line) != None:
-        token_list.append("A")
-        token_list.append(keyword_classifiers.KW_SEPARATOR)
-
     elif re.search("^AN( )?", line) != None:
         token_list.append("AN")
+        token_list.append(keyword_classifiers.KW_SEPARATOR)
+        
+    elif re.search("^A( )?", line) != None:
+        token_list.append("A")
         token_list.append(keyword_classifiers.KW_SEPARATOR)
 
     # If-Then 
@@ -283,8 +283,8 @@ def lexemes_matcher (line):
         token_list.append(numbar)
         token_list.append(keyword_classifiers.LIT_NUMBAR)
 
-    elif re.search(r'^"([^":]|:\)|:>|:o|:"|::)*"( )?', line) != None:
-        yarn = re.search(r'^"([^":]|:\)|:>|:o|:"|::)*"( )?', line).group()
+    elif re.search(r'^"([^"]|:\)|:>|:o|:"|::|")*"( )?', line) != None:
+        yarn = re.search(r'^"([^"]|:\)|:>|:o|:"|::)*"( )?', line).group()
         token_list.append(yarn)
         token_list.append(keyword_classifiers.LIT_YARN )
     
@@ -317,13 +317,14 @@ def lexemes_init(lines, disp_lexemes):
         
         line = line.strip()
         while line != "":
-           
+            print(f"Start: {line}")
             token = lexemes_matcher(line)
-
+            print(f"Token: {token}")
             if token != []:
                 # token_dict[token[0].strip()] = token[1].strip()
                 lexemes.append((token[0].strip(), token[1].strip()))
                 line = line.replace(token[0], "").strip()
+                print(f"Current: {line}")
               
             else:
                 break
@@ -339,7 +340,7 @@ def lexemes_init(lines, disp_lexemes):
     
     # Insert each lexeme into the Treeview, even repeated ones
     for lexeme, classification in lexemes:
-        print(f"{lexeme} \t\t {classification}")
+        # print(f"{lexeme} \t\t {classification}")
         disp_lexemes.insert("", "end", values=(lexeme, classification))
 
 
