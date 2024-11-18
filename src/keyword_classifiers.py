@@ -11,7 +11,10 @@ ID_LOOP = "Loop Identifier"
 DECLARATION_VAR = "Variable Declaration"
 ASSIGNMENT_VAR = "Variable Assignment"
 
-KW_COMMENT = "Comment Keyword"
+KW_COMMENT_START = "Comment keyword"
+COMMENT = "Comment"
+KW_COMMENT_DELIM = "Comment delimiter"
+
 KW_ARITHMETIC = "Arithmetic Keyword"
 KW_SEPARATOR = "Separator Keyword"
 KW_COMPARISON = "Comparison Keyword"
