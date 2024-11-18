@@ -1,5 +1,5 @@
 import re
-from src import keyword_classifiers
+from src.keyword_classifiers import *
 import tkinter as tk 
 from tkinter import filedialog,ttk
 
