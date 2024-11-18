@@ -107,6 +107,8 @@ def syntax_analyzer(lexemes):
                     # Expression
                     elif index < len(lexemes) and lexemes[index][1] == KW_ARITHMETIC:
                         parse_arithmethic_operations()
+                else:
+                    symbol_table.append([variable, "NOOB"])
             else:
                 print("Error: Hindi ko pa alam")
 
