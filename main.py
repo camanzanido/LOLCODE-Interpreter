@@ -36,14 +36,8 @@ def execute_btn(text_editor, disp_lexemes):
     lexemes_init(text_editor.get("1.0", tk.END).splitlines(), disp_lexemes)
 
 
-def lexemes_matcher (line):
+def lexemes_matcher (line, code):
     token_list = []
-
-    if re.search("^BTW .*$", line) != None:
-        return token_list
-
-    if 'BTW' in line:
-        line = line.split('BTW')[0].strip()
 
     # Code Delimiters
     if re.search("^HAI$", line) != None:
@@ -72,13 +66,17 @@ def lexemes_matcher (line):
         token_list.append(keyword_classifiers.DECLARATION_VAR)
 
     # Comments
-    elif re.search("^BTW$", line) != None:
+    elif re.search("^BTW( )?", line) != None:
         token_list.append("BTW")
-        token_list.append(keyword_classifiers.KW_COMMENT)
+        token_list.append(keyword_classifiers.KW_COMMENT_START)
 
-    elif re.search("^OBTW$", line) != None:
+    elif re.search("^OBTW( )?", line) != None:
         token_list.append("OBTW")
-        token_list.append(keyword_classifiers.KW_COMMENT)
+        token_list.append(keyword_classifiers.KW_COMMENT_START)
+
+    elif re.search("^TLDR$", line) != None:
+        token_list.append("TLDR")
+        token_list.append(keyword_classifiers.KW_COMMENT_DELIM)
 
     # Input/Output
     elif re.search("^GIMMEH( )?", line) != None:
@@ -88,10 +86,6 @@ def lexemes_matcher (line):
     elif re.search("^VISIBLE( )?", line) != None:
         token_list.append("VISIBLE")
         token_list.append(keyword_classifiers.KW_OUTPUT)
-
-    elif re.search("^TLDR$", line) != None:
-        token_list.append("TLDR")
-        token_list.append(keyword_classifiers.KW_COMMENT)
 
     # Assignment
     elif re.search("^R( )?", line) != None:
@@ -305,29 +299,46 @@ def lexemes_matcher (line):
         token_list.append(variable)
         token_list.append(keyword_classifiers.ID_VAR)
     
-    return token_list
-
+    
+    if code == 0:
+        return token_list
+    else:
+        # All lines are comment until TLDR is read
+        if token_list[0] == "TLDR":
+            return token_list
+        else: 
+            return [line, keyword_classifiers.COMMENT]
 
 def lexemes_init(lines, disp_lexemes):
 
     # token_dict = {}
     lexemes = []
+    OBTW_flag = False
 
     # Per line of the code
     for line in lines:
-        
         line = line.strip()
         while line != "":
             print(f"Start: {line}")
-            token = lexemes_matcher(line)
+            if not OBTW_flag:
+                token = lexemes_matcher(line, 0)
+            else:
+                token = lexemes_matcher(line, 1)
             print(f"Token: {token}")
             if token != []:
-                # token_dict[token[0].strip()] = token[1].strip()
                 lexemes.append((token[0].strip(), token[1].strip()))
-                line = line.replace(token[0], "", 1).strip() 
-            
+                if token[0] == "BTW":
+                    # Everything after 'BTW' is a comment
+                    lexemes.append((line.replace(token[0], "", 1).strip(), keyword_classifiers.COMMENT))
+                    line = ""
+                # Raise flag if OBTW is read
+                elif token[0] == "OBTW":
+                    OBTW_flag = True
+                elif token[0] == "TLDR":
+                    OBTW_flag = False
+                line = line.replace(token[0], "", 1).strip()
             else:
-                break
+                break   
 
     # for key, value in token_dict.items():
     #     print(f"{key} \t\t {value}")
