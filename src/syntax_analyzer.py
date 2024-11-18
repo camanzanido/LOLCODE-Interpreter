@@ -39,7 +39,7 @@ def syntax_analyzer(lexemes):
                 parse_output()
             elif lexeme == "WAZZUP":
                 parse_variable_declarations()
-            elif lexeme == "GIMMEH":
+            elif lexemes[index][0] == "GIMMEH":
                 parse_input()
             elif lexeme_type == ID_VAR:
                 parse_variable_reassignment()
