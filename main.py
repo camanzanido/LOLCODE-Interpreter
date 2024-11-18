@@ -285,8 +285,6 @@ def lexemes_matcher (line):
         token_list.append(numbr)
         token_list.append(keyword_classifiers.LIT_NUMBR)
     
-
-
     elif re.search(r'^"([^"]|:\)|:>|:o|:"|::|")*"( )?', line) != None:
         yarn = re.search(r'^"([^"]|:\)|:>|:o|:"|::)*"( )?', line).group()
         token_list.append(yarn)
@@ -312,7 +310,6 @@ def lexemes_matcher (line):
 
 def lexemes_init(lines, disp_lexemes):
 
-
     # token_dict = {}
     lexemes = []
 
@@ -327,11 +324,10 @@ def lexemes_init(lines, disp_lexemes):
             if token != []:
                 # token_dict[token[0].strip()] = token[1].strip()
                 lexemes.append((token[0].strip(), token[1].strip()))
-                line = line.replace(token[0], "").strip() #change .rep or slice nlang
+                line = line.replace(token[0], "", 1).strip() 
             
             else:
                 break
-
 
     # for key, value in token_dict.items():
     #     print(f"{key} \t\t {value}")
