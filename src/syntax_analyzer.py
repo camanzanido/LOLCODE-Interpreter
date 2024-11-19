@@ -69,6 +69,7 @@ def syntax_analyzer(lexemes):
                 # Update the symbol table
                 update_variable_value(variable, parsed_value)
             else:
+                print("1")
                 print("Error: Hindi ko pa alam")
 
 
@@ -121,6 +122,7 @@ def syntax_analyzer(lexemes):
             print(f"it: {it}")
             return value
         else:
+            print("3")
             print("Error: Hindi ko pa alam")
 
     # ===================================================================== ARITHMETHIC OPERATIONS =====================================================================
@@ -248,6 +250,7 @@ def syntax_analyzer(lexemes):
             elif index < lexemes_length and array_lexemes[index][0] == "IS NOW A":
                 parse_type_casting(variable)
             else:
+                print("2")
                 print("Error: Hindi ko pa alam")
 
     # <typecasting> ::= MAEK var_ident literal | IS NOW A literal
@@ -311,6 +314,7 @@ def syntax_analyzer(lexemes):
                 else:
                     symbol_table.append([variable, "NOOB"])
             else:
+                print("4")
                 print("Error: Hindi ko pa alam")
 
     # <boolean_op> :: = BOTH OF <expr> AN <expr> | EITHER OF <expr> AN <expr> | WON OF <expr> AN <expr> | NOT <expr> | ALL OF <expr> MKAY | ANY OF <expr> MKAY
@@ -411,25 +415,26 @@ def syntax_analyzer(lexemes):
                 print(f"Unknown arithmetic operation: {operator}")
 
     #<if-then> ::= <expr><linebreak>O RLY?<linebreak>YA RLY<linebreak> <code_block> <linebreak> <else-if>* <linebreak> NO WAI <linebreak> <code_block> <linebreak>OIC
-    def parse_if_else_statements():
+    def parse_if_else_statements():  # Note: NO MEBBE YET
         nonlocal index, it
         lexeme = array_lexemes[index][0]
+        condition = []          
+        condition.append(it) 
         if lexeme == "O RLY?":
             consume(lexeme)
-            condition = it
-            print(f"condition: {it}")
-            while index < lexemes_length and array_lexemes[index][0] != "OIC":
-                curr_lexeme = array_lexemes[index][0]
-                if condition and curr_lexeme == "YA RLY":
-                    consume("YA RLY")
-                    parse_code_block()
-                elif not condition and curr_lexeme == "NO WAI":
+            cond = condition[0]
+            # while index < lexemes_length and array_lexemes[index][0] != "OIC" or index < lexemes_length and array_lexemes[index][0] != "NO WAI" :
+            curr_lexeme = array_lexemes[index][0]
+            if cond and curr_lexeme == "YA RLY":
+                consume("YA RLY")
+                parse_code_block()
+
+            elif not cond and array_lexemes[index][0] == "NO WAI":
                     consume("NO WAI")
                     parse_code_block()
-                else:               
-                    break
             # Delimter
-            consume("OIC")
+            if array_lexemes[index][0] == "OIC":
+                consume("OIC")
 
     def parse_code_block():
         nonlocal index
@@ -451,8 +456,10 @@ def syntax_analyzer(lexemes):
     def parse_switch_case_statement():
         nonlocal index, it
         lexeme = array_lexemes[index][0]
+        # cond = array_lexemes[index-1][0]
+        # print(cond)
+        # print(get_variable_value(cond))
         condition = it
-        print(condition)
         matched = False
         if lexeme == "WTF?":
            # operator = lexeme
@@ -462,7 +469,10 @@ def syntax_analyzer(lexemes):
 
                 if curr_lexeme == "OMG":
                     consume("OMG")
+                    print(array_lexemes[index][0])
+                    print(type(array_lexemes[index][0]))        # hindi na typecast
                     if not matched and condition == array_lexemes[index][0]:
+                        print("in omg")
                         matched = True
                         consume(array_lexemes[index][0])
                         while index < lexemes_length and array_lexemes[index][0] != "GTFO":
@@ -506,21 +516,26 @@ def syntax_analyzer(lexemes):
             if condition_type == 'WILE':
                 while parse_comparison_operations():  
                     var_value = get_variable_value(varident)
+                    print("in wile")
+                    # parse_code_block()
                     if operation == "NERFIN":
                         var_value -= 1
                     else:
                         var_value += 1
                     update_variable_value(varident, var_value)
+                    print(var_value)
             else:  # TIL
                 while not parse_comparison_operations(): 
                     var_value = get_variable_value(varident)
+                    print("in til")
+                    # parse_code_block()
                     if operation == "NERFIN":
                         var_value -= 1
                     else:
                         var_value += 1
                     update_variable_value(varident, var_value)
+                    print(var_value)
 
-        
             if array_lexemes[index][0] == "IM OUTTA YR":
                 consume("IM OUTTA YR")
                 consume(label)  
