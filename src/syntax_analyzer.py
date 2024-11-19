@@ -8,7 +8,6 @@ def syntax_analyzer(lexemes):
     symbol_table = []
     index = 0
     lexemes_length = len(array_lexemes)
-    concat_string = ""
 
     # Consume function: Proceeds to the next token
     def consume(expected_token):
@@ -56,8 +55,10 @@ def syntax_analyzer(lexemes):
             if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
                 variable = array_lexemes[index][0]
                 consume(array_lexemes[index][0])
+                # Ask for an input in the terminal
                 value = input(f"{variable}: ")
                 parsed_value = parse_value(value)
+                # Update the symbol table
                 update_variable_value(variable, parsed_value)
             else:
                 print("Error: Hindi ko pa alam")
@@ -69,6 +70,7 @@ def syntax_analyzer(lexemes):
         lexeme = array_lexemes[index][0]
         if lexeme == "VISIBLE":
             consume(lexeme)
+            # Parse the expression until AN is read
             while index < lexemes_length:
                 parse_expression()
                 if index < lexemes_length and array_lexemes[index][0] == "AN":
@@ -76,7 +78,7 @@ def syntax_analyzer(lexemes):
                 else:
                     break
     
-    # =========== EXPRESSIONS ============
+    # ===================================================================== EXPRESSIONS =====================================================================
     # <expression> ::= <arithmetic op> | <smoosh op> | var | literal
     def parse_expression():
         nonlocal index
@@ -100,7 +102,8 @@ def syntax_analyzer(lexemes):
         else:
             print("Error: Hindi ko pa alam")
 
-   # <arithmethic> ::= <operations> <literal|var_indent|arithmethic> AN <literal|var_indent|arithmethic>
+    # ===================================================================== ARITHMETHIC OPERATIONS =====================================================================
+    # <arithmethic> ::= <operations> <literal|var_indent|arithmethic> AN <literal|var_indent|arithmethic>
     def parse_arithmethic_operations():
         nonlocal index
         lexeme = array_lexemes[index][0]
@@ -109,16 +112,13 @@ def syntax_analyzer(lexemes):
         if lexeme_type == KW_ARITHMETIC:
             operator = lexeme
             consume(lexeme)
-
             # Operand 1
             operand1 = operand()
-
             # AN
             if index < lexemes_length and array_lexemes[index][0] == "AN":
                 consume("AN")
                 # Operand 2
                 operand2 = operand()
-
             # Evaluate 
             if operator == "SUM OF":
                 return operand1 + operand2
@@ -176,6 +176,7 @@ def syntax_analyzer(lexemes):
         else:
             print(f"Invalid operand type: {lexeme_type}")
 
+    # ===================================================================== SMOOSH KEYWORD =====================================================================
     # <concatenate> ::= SMOOSH <expr> AN [<expr> | (<expr> AN)*]
     def parse_concatenation():
         nonlocal index
@@ -187,6 +188,7 @@ def syntax_analyzer(lexemes):
             consume(lexeme)
             while index < lexemes_length:
                 # expressions
+                # concatenate the result of the expressions
                 concat_string += str(parse_expression())
                 if index < lexemes_length and array_lexemes[index][0] == "AN":
                     consume("AN")
@@ -196,7 +198,8 @@ def syntax_analyzer(lexemes):
             if index < lexemes_length and array_lexemes[index][1] == DELIM_EXPR_END:
                 consume(array_lexemes[index][0])
             return concat_string
-
+    
+    # ===================================================================== VARIABLE REASSIGNMENT =====================================================================
     # <assignment> ::= var_indent R <typecasting> | var_ident R <expr>
     def parse_variable_reassignment():
         nonlocal index
@@ -210,18 +213,19 @@ def syntax_analyzer(lexemes):
             # R
             if index < lexemes_length and array_lexemes[index][1] == ASSIGNMENT_VAR:
                 consume(array_lexemes[index][0])
-                # Type casting
+                # Perform Type casting 
                 if index < lexemes_length and array_lexemes[index][1] == KW_TYPECAST:
                     parse_type_casting(variable)
-                # Expression
+                # Reassign the evaluated expression
                 else:
                     update_variable_value(variable, parse_expression())
-            # Type casting
+            # Perform Type casting 
             elif index < lexemes_length and array_lexemes[index][0] == "IS NOW A":
                 parse_type_casting(variable)
             else:
                 print("Error: Hindi ko pa alam")
 
+    # <typecasting> ::= MAEK var_ident literal | IS NOW A literal
     def parse_type_casting(variable):
         nonlocal index
         lexeme = array_lexemes[index][0]
@@ -229,12 +233,15 @@ def syntax_analyzer(lexemes):
         # <type_casting> ::= MAEK var_ident <literal> 
         if lexeme == "MAEK":
             consume(lexeme)
+            # var_ident
             if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
                 variable = array_lexemes[index][0]
                 consume(variable)
+                # Literal
                 if index < lexemes_length and array_lexemes[index][1] == LIT:
                     lexeme = array_lexemes[index][0]
                     consume(array_lexemes[index][0])
+                    # Update the symbol table given the new recasted value
                     new_type_value = recast_variable_value(variable, lexeme)
                     update_variable_value(variable, new_type_value)
          # <type_casting> ::= IS NOW A <literal> 
@@ -243,9 +250,11 @@ def syntax_analyzer(lexemes):
             if index < lexemes_length and array_lexemes[index][1] == LIT:
                 lexeme = array_lexemes[index][0]
                 consume(array_lexemes[index][0])
+                 # Update the symbol table given the new recasted value
                 new_type_value = recast_variable_value(variable, lexeme)
                 update_variable_value(variable, new_type_value)
 
+    # ===================================================================== VARIABLE DECLARATIONS =====================================================================
     # <variable_declarations> ::= WAZZUP <variable_declaration> BUHBYE
     def parse_variable_declarations():
         nonlocal index
@@ -280,12 +289,14 @@ def syntax_analyzer(lexemes):
                 print("Error: Hindi ko pa alam")
 
     # ------------------- HELPER FUNCTIONS -------------------
+    # Function for returning symbol table value
     def get_variable_value(var_name):
         for var, value in symbol_table:
             if var == var_name:
                 return value
         print(f"Variable '{var_name}' not found")
     
+    # Parser
     def parse_value(value):
         # Remove quotes from YARN literals
         if value.startswith('"') and value.endswith('"'):
@@ -299,7 +310,8 @@ def syntax_analyzer(lexemes):
         except ValueError:
             pass  
         return value
-            
+
+    # Function for updating the symbol table
     def update_variable_value(variable, parsed_value):
         for i in range(len(symbol_table)):
             if symbol_table[i][0] == variable:
@@ -307,6 +319,7 @@ def syntax_analyzer(lexemes):
                 return
         symbol_table.append([variable, parsed_value])
 
+    # Recast function
     def recast_variable_value(variable, new_type):
         for var, value in symbol_table:
     
@@ -349,7 +362,6 @@ def syntax_analyzer(lexemes):
     print("Symbol Table: ", symbol_table)
 
    
-
 def comments_remover(array_lexemes):
     filtered_lexemes = []
 
