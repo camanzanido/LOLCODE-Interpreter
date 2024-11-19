@@ -18,7 +18,7 @@ def get_file(file_label, text_editor):
 
     filename = ''
 
-    filename = filedialog.askopenfilename( initialdir="/", title= "Select File", filetypes=( ("LOL files", "*.lol"), ("all files", "*.*") ))
+    filename = filedialog.askopenfilename( initialdir="/project-testcases", title= "Select File", filetypes=( ("LOL files", "*.lol"), ("all files", "*.*") ))
 
     if filename:
         file_label.config(text="File opened: " + filename)
