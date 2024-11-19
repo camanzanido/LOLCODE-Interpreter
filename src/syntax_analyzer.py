@@ -5,7 +5,7 @@ def syntax_analyzer(lexemes):
 
     # Filtered lexemes
     array_lexemes = comments_remover(lexemes)
-    symbol_table = []
+    symbol_table = [["IT", 0]]
     index = 0
     it = 0
     lexemes_length = len(array_lexemes)
@@ -50,9 +50,13 @@ def syntax_analyzer(lexemes):
                 parse_switch_case_statement()
             elif lexeme == "IM IN YR":
                 parse_loop()
+            elif lexeme_type == ID_FUNC:
+                parse_function()
+            elif lexeme == "I IZ":
+                parse_function_call()
             else:
                 break
-
+ 
     # <input> ::= GIMMEH <var_ident> 
     def parse_input():
         nonlocal index, it
@@ -121,6 +125,12 @@ def syntax_analyzer(lexemes):
             it = value
             print(f"it: {it}")
             return value
+        elif lexeme_type == KW_OUTPUT:
+            parse_output()
+        elif lexeme == "I IZ":
+            parse_function_call()
+        elif lexeme == "IT":
+            return
         else:
             print("3")
             print("Error: Hindi ko pa alam")
@@ -540,14 +550,87 @@ def syntax_analyzer(lexemes):
                 consume("IM OUTTA YR")
                 consume(label)  
             
-            
+    # ===================================================================== FUNCTIONS =====================================================================
+    # <function> ::= HOW IZ I func_ident <parameters> <function_body> <return_statement> IF U SAY SO
+    def parse_function():
+        nonlocal index
+        lexeme = array_lexemes[index][0]
+        
+        # HOW IZ I
+        if lexeme == "HOW IZ I":  
+            consume(lexeme)
+
+            # FUNCTION NAME
+            if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
+                function_name = array_lexemes[index][0]
+                consume(array_lexemes[index][0])  
+                if index < lexemes_length and array_lexemes[index][0] == "YR":
+                    consume(array_lexemes[index][0])  
+                    # <parameters> 
+                    function_args = []
+                    while index < lexemes_length and array_lexemes[index][1] == ID_VAR:
+                        function_args.append(array_lexemes[index][0])
+                        consume(array_lexemes[index][0])  
+                        if index < lexemes_length and array_lexemes[index][0] == "AN":
+                            consume(array_lexemes[index][0])
+                            if index < lexemes_length and array_lexemes[index][0] == "YR":
+                                consume(array_lexemes[index][0])
+                        else:
+                            break
+            # <function_body>
+            parse_function_body()
+            # <return_statement>
+            parse_function_return()
+            # IF U SAY SO
+            if index < lexemes_length and array_lexemes[index][0] == "IF U SAY SO":
+                consume(array_lexemes[index][0])
+
+     # <function_body>
+    def parse_function_body():
+        while index < lexemes_length and array_lexemes[index][0] not in ["FOUND YR", "IF U SAY SO", "GTFO"]:
+            parse_expression()
+    # <return_statement>
+    def parse_function_return():
+        if index < lexemes_length and array_lexemes[index][0] == "FOUND YR":
+            consume(array_lexemes[index][0])  
+            parse_expression()  
+        if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+            consume(array_lexemes[index][0])
+            while index < lexemes_length and array_lexemes[index][0] != "IF U SAY SO":
+                parse_expression()
+
+    # <function_call>
+    def parse_function_call():
+        nonlocal index
+        lexeme = array_lexemes[index][0]
+        # I IZ
+        if lexeme == "I IZ":  
+            consume(lexeme)
+            # Function name
+            if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
+                function_name = array_lexemes[index][0]
+                consume(array_lexemes[index][0])  
+                # YR
+                if index < lexemes_length and array_lexemes[index][0] == "YR":
+                    consume(array_lexemes[index][0])  
+                    # Parameter 1
+                    parse_expression()
+                    # the rest of the parameters
+                    while index < lexemes_length and array_lexemes[index][0] == "AN":
+                        consume(array_lexemes[index][0])  
+                        if index < lexemes_length and array_lexemes[index][0] == "YR":
+                            consume(array_lexemes[index][0])
+                            parse_expression()
+                        else:
+                            break
+
     # ------------------- HELPER FUNCTIONS -------------------
     # Function for returning symbol table value
     def get_variable_value(var_name):
         for var, value in symbol_table:
             if var == var_name:
                 return value
-        print(f"Variable '{var_name}' not found")
+        return 0
     
     # Parser
     def parse_value(value):
