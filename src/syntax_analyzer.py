@@ -44,10 +44,12 @@ def syntax_analyzer(lexemes):
                 parse_input()
             elif lexeme_type == ID_VAR:
                 parse_variable_reassignment()
-            elif lexeme_type == "O RLY?":
+            elif lexeme == "O RLY?":
                 parse_if_else_statements()
-            elif lexeme_type == "WTF?":
+            elif lexeme == "WTF?":
                 parse_switch_case_statement()
+            elif lexeme == "IM IN YR":
+                parse_loop()
             else:
                 break
 
@@ -118,9 +120,6 @@ def syntax_analyzer(lexemes):
             it = value
             print(f"it: {it}")
             return value
-        elif lexeme_type == KW_CONDITION:
-            value = parse_if_else_statements()
-
         else:
             print("Error: Hindi ko pa alam")
 
@@ -325,39 +324,28 @@ def syntax_analyzer(lexemes):
             consume(lexeme)
 
             operand1 = operand()
-            print(f"operand1: {operand1}")
-
-            # Initialize operand2 to None
             operand2 = None
 
-            # AN (optional)
+            # AN 
             if index < lexemes_length and array_lexemes[index][0] == "AN":
                 consume("AN")
                 operand2 = operand()
-                print(f"operand2: {operand2}")
-                print(type(operand2))
 
-            # Boolean operations
             if operator == "BOTH OF":
                 if operand2 is not None:
                     print(f"and : {operand1 and operand2}")
                     return operand1 and operand2
-                else:
-                    raise SyntaxError("Expected second operand for 'BOTH OF'")
-
             elif operator == "EITHER OF":
                 if operand2 is not None:
                     print(f"or : {operand1 or operand2}")
                     return operand1 or operand2
-                else:
-                    raise SyntaxError("Expected second operand for 'EITHER OF'")
 
             elif operator == "WON OF":
                 if operand2 is not None:
                     print(f"won: {bool(operand1) ^ bool(operand2)}")
                     return bool(operand1) ^ bool(operand2)
-                else:
-                    raise SyntaxError("Expected second operand for 'WON OF'")
+                # else:
+                #     raise SyntaxError("Expected second operand for 'WON OF'")
 
             elif operator == "NOT":
                 print(f"not : {not operand1}")
@@ -367,22 +355,27 @@ def syntax_analyzer(lexemes):
             elif operator == "ALL OF" or operator == "ANY OF":
                 operands = []
                 # get all operands until MKAY
+                oper = operand()
+                print(f"oper:{oper}")
+                if oper not in ["BOTH OF", "EITHER OF", "NOT", "WON OF"]:
+                    operands.append(oper)
+
                 while index < lexemes_length and array_lexemes[index][0] != "MKAY":
-                    oper = operand()
-                    print(f"oper:{oper}")
-                    operands.append(oper) # append in the list
-                    # AN
                     if index < lexemes_length and array_lexemes[index][0] == "AN":
                         consume("AN")
+                        oper = operand()
+                        print(f"oper:{oper}")
+                        operands.append(oper) # append in the list
+                    # AN
+                    
                 # MKAY
-                if index < lexemes_length and array_lexemes[index][0] == "MKAY":
-                    consume("MKAY")
+                consume("MKAY")
 
                 if operator == "ALL OF":
                     print(f"all : {all(operands)}")
                     return all(operands) 
                 elif operator == "ANY OF":
-                    print(f"all : {any(operands)}")
+                    print(f"any : {any(operands)}")
                     return any(operands)
             else:
                 print(f"Unknown arithmetic operation: {operator}")
@@ -459,13 +452,14 @@ def syntax_analyzer(lexemes):
         nonlocal index, it
         lexeme = array_lexemes[index][0]
         condition = it
+        print(condition)
         matched = False
         if lexeme == "WTF?":
            # operator = lexeme
             consume(lexeme)
             while index < lexemes_length and array_lexemes[index][0] != "OIC":
                 curr_lexeme = array_lexemes[index][0]
-                
+
                 if curr_lexeme == "OMG":
                     consume("OMG")
                     if not matched and condition == array_lexemes[index][0]:
@@ -483,6 +477,55 @@ def syntax_analyzer(lexemes):
             # Delimter
             consume("OIC")
 
+    # IM IN YR <label> operation YR varident (<til_op> | <wile_op>) <linebreak> <code_block><linebreak> IM OUTTA YR <label>
+    def parse_loop():
+        nonlocal index
+        lexeme = array_lexemes[index][0]
+
+        if lexeme == "IM IN YR":
+            consume("IM IN YR")
+            label = array_lexemes[index][0]
+            consume(label)
+            
+            # UPPIN or NERFIN
+            operation = array_lexemes[index][0]
+            if operation not in ["UPPIN", "NERFIN"]:
+               print(f"Expected 'UPPIN' or 'NERFIN', found {operation}")
+            consume(operation)
+            consume("YR")
+            varident = array_lexemes[index][0]
+            consume(varident)
+            
+            # WILE or TIL
+            condition_type = array_lexemes[index][0]
+            if condition_type not in ["WILE", "TIL"]:
+                print(f"Expected 'WILE' or 'TIL', found {condition_type}")
+            consume(condition_type)
+        
+               # WILE 
+            if condition_type == 'WILE':
+                while parse_comparison_operations():  
+                    var_value = get_variable_value(varident)
+                    if operation == "NERFIN":
+                        var_value -= 1
+                    else:
+                        var_value += 1
+                    update_variable_value(varident, var_value)
+            else:  # TIL
+                while not parse_comparison_operations(): 
+                    var_value = get_variable_value(varident)
+                    if operation == "NERFIN":
+                        var_value -= 1
+                    else:
+                        var_value += 1
+                    update_variable_value(varident, var_value)
+
+        
+            if array_lexemes[index][0] == "IM OUTTA YR":
+                consume("IM OUTTA YR")
+                consume(label)  
+            
+            
     # ------------------- HELPER FUNCTIONS -------------------
     # Function for returning symbol table value
     def get_variable_value(var_name):
