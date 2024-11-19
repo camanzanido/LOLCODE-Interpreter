@@ -244,7 +244,7 @@ def lexemes_matcher (line, code):
         token_list.append(numbr)
         token_list.append(LIT_NUMBR)
     
-    elif re.search(r'^"([^"]|:\)|:>|:o|:"|::|")*"( )?', line) != None:
+    elif re.search(r'^"(.|:\)|:>|:o|:"|::|")*"( )?', line) != None:
         yarn = re.search(r'^"([^"]|:\)|:>|:o|:"|::)*"( )?', line).group()
         token_list.append(yarn)
         token_list.append(LIT_YARN )
