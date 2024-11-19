@@ -46,12 +46,14 @@ def syntax_analyzer(lexemes):
                 parse_variable_reassignment()
             elif lexeme_type == "O RLY?":
                 parse_if_else_statements()
+            elif lexeme_type == "WTF?":
+                parse_switch_case_statement()
             else:
                 break
 
     # <input> ::= GIMMEH <var_ident> 
     def parse_input():
-        nonlocal index
+        nonlocal index, it
         lexeme = array_lexemes[index][0]
         if lexeme == "GIMMEH":
             consume(lexeme)
@@ -61,6 +63,7 @@ def syntax_analyzer(lexemes):
                 # Ask for an input in the terminal
                 value = input(f"{variable}: ")
                 parsed_value = parse_value(value)
+                it = parsed_value
                 # Update the symbol table
                 update_variable_value(variable, parsed_value)
             else:
@@ -117,6 +120,7 @@ def syntax_analyzer(lexemes):
             return value
         elif lexeme_type == KW_CONDITION:
             value = parse_if_else_statements()
+
         else:
             print("Error: Hindi ko pa alam")
 
@@ -371,11 +375,14 @@ def syntax_analyzer(lexemes):
                     if index < lexemes_length and array_lexemes[index][0] == "AN":
                         consume("AN")
                 # MKAY
-                consume("MKAY")
+                if index < lexemes_length and array_lexemes[index][0] == "MKAY":
+                    consume("MKAY")
 
                 if operator == "ALL OF":
+                    print(f"all : {all(operands)}")
                     return all(operands) 
                 elif operator == "ANY OF":
+                    print(f"all : {any(operands)}")
                     return any(operands)
             else:
                 print(f"Unknown arithmetic operation: {operator}")
@@ -412,9 +419,9 @@ def syntax_analyzer(lexemes):
 
     #<if-then> ::= <expr><linebreak>O RLY?<linebreak>YA RLY<linebreak> <code_block> <linebreak> <else-if>* <linebreak> NO WAI <linebreak> <code_block> <linebreak>OIC
     def parse_if_else_statements():
-        nonlocal index
+        nonlocal index, it
         lexeme = array_lexemes[index][0]
-        if lexeme == "O RLY":
+        if lexeme == "O RLY?":
             consume(lexeme)
             condition = it
             print(f"condition: {it}")
@@ -422,16 +429,16 @@ def syntax_analyzer(lexemes):
                 curr_lexeme = array_lexemes[index][0]
                 if condition and curr_lexeme == "YA RLY":
                     consume("YA RLY")
-                    parse_if_block()
+                    parse_code_block()
                 elif not condition and curr_lexeme == "NO WAI":
                     consume("NO WAI")
-                    parse_if_block()
+                    parse_code_block()
                 else:               
                     break
             # Delimter
             consume("OIC")
 
-    def parse_if_block():
+    def parse_code_block():
         nonlocal index
         while index < lexemes_length:
             lexeme = array_lexemes[index][0]
@@ -446,6 +453,35 @@ def syntax_analyzer(lexemes):
                 parse_if_else_statements()
             else:
                 break
+
+    # <switch-case> ::= WTF? <linebreak> <case>+ <linebreak> <default_case>?  OIC
+    def parse_switch_case_statement():
+        nonlocal index, it
+        lexeme = array_lexemes[index][0]
+        condition = it
+        matched = False
+        if lexeme == "WTF?":
+           # operator = lexeme
+            consume(lexeme)
+            while index < lexemes_length and array_lexemes[index][0] != "OIC":
+                curr_lexeme = array_lexemes[index][0]
+                
+                if curr_lexeme == "OMG":
+                    consume("OMG")
+                    if not matched and condition == array_lexemes[index][0]:
+                        matched = True
+                        consume(array_lexemes[index][0])
+                        while index < lexemes_length and array_lexemes[index][0] != "GTFO":
+                            parse_code_block()
+                        consume("GTFO")
+
+                elif not matched and curr_lexeme == "OMGWTF":
+                    consume("OMGWTF")
+                    while index < lexemes_length and array_lexemes[index][0] != "GTFO":
+                        parse_code_block()
+                    consume("GTFO")
+            # Delimter
+            consume("OIC")
 
     # ------------------- HELPER FUNCTIONS -------------------
     # Function for returning symbol table value
