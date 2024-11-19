@@ -5,7 +5,7 @@ HAI
         I HAS A y
     BUHBYE
 
-    VISIBLE "x:" WIN ", y:" WIN
+    VISIBLE "x:" AN WIN AN ", y:"  AN WIN
     x R WIN
     y R WIN
 
@@ -18,7 +18,7 @@ HAI
     VISIBLE ANY OF BOTH OF x AN EITHER OF NOT x AN y AN y AN NOT y MKAY
     VISIBLE BOTH OF x AN EITHER OF NOT x AN y
 
-    VISIBLE "x:" FAIL ", y:" WIN
+    VISIBLE "x:" AN FAIL AN ", y:" AN WIN
     x R FAIL
 
     VISIBLE BOTH OF x AN y
@@ -30,7 +30,7 @@ HAI
     VISIBLE ANY OF BOTH OF x AN EITHER OF NOT x AN y AN y AN NOT y MKAY
     VISIBLE BOTH OF x AN EITHER OF NOT x AN y
 
-    VISIBLE "x:" FAIL ", y:" FAIL
+    VISIBLE "x:" AN FAIL AN ", y:" AN FAIL
     y R FAIL
 
     VISIBLE BOTH OF x AN y

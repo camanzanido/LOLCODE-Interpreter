@@ -13,7 +13,7 @@ HAI
 	VISIBLE "Choice: "
 	GIMMEH choice
 
-	BOTH SAEM choice AN 1
+	VISIBLE BOTH SAEM choice AN 1
 	O RLY?
 		YA RLY
 			VISIBLE "Enter birth year: "
