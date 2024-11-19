@@ -99,6 +99,12 @@ def syntax_analyzer(lexemes):
         elif lexeme_type == KW_CONCATENATE:
             value = parse_concatenation()
             return value
+        elif lexeme_type == KW_BOOLEAN:
+            value = parse_boolean_operations()
+            return value
+        elif lexeme_type == KW_COMPARISON:
+            value = parse_comparison_operations()
+            return value
         else:
             print("Error: Hindi ko pa alam")
 
@@ -172,6 +178,10 @@ def syntax_analyzer(lexemes):
         # Evaluate recursively
         elif lexeme_type == KW_ARITHMETIC:
             return parse_arithmethic_operations()
+        elif lexeme_type == KW_BOOLEAN:
+            return parse_boolean_operations()
+        elif lexeme_type == KW_COMPARISON:
+            return parse_comparison_operations()
 
         else:
             print(f"Invalid operand type: {lexeme_type}")
@@ -287,6 +297,81 @@ def syntax_analyzer(lexemes):
                     symbol_table.append([variable, "NOOB"])
             else:
                 print("Error: Hindi ko pa alam")
+
+    # <boolean_op> :: = BOTH OF <expr> AN <expr> | EITHER OF <expr> AN <expr> | WON OF <expr> AN <expr> | NOT <expr> | ALL OF <expr> MKAY | ANY OF <expr> MKAY
+    def parse_boolean_operations():
+        nonlocal index
+        lexeme = array_lexemes[index][0]
+        lexeme_type = array_lexemes[index][1]
+
+        if lexeme_type == KW_BOOLEAN:
+            operator = lexeme
+            consume(lexeme)
+
+            if operator in ["BOTH OF", "EITHER OF", "WON OF", "NOT"]:
+                # Operand 1
+                operand1 = operand()
+                # AN
+                if index < lexemes_length and array_lexemes[index][0] == "AN":
+                    consume("AN")
+                    # Operand 2
+                    operand2 = operand()
+
+                if operator == "BOTH OF":
+                    return operand1 and operand2
+                elif operator ==  "EITHER OF":
+                    return operand1 or operand2
+                elif operator == "WON OF":
+                    return operand1 ^ operand2
+                elif operator == "NOT":
+                    return not operand1 
+            
+            # since ALL OF & ANY OF cannot be nested, separate to other boolean operations that can be nested
+            elif operator == "ALL OF" or operator == "ANY OF":
+                operands = []
+                # get all operands until MKAY
+                while index < lexemes_length and array_lexemes[index][0] != "MKAY":
+                    operands.append(operand()) # append in the list
+                    # AN
+                    if index < lexemes_length and array_lexemes[index][0] == "AN":
+                        consume("AN")
+                # MKAY
+                if index < lexemes_length and array_lexemes[index][0] == "MKAY":
+                    consume("MKAY")
+
+                elif operator == "ALL OF":
+                    return all(operands) 
+                elif operator == "ANY OF":
+                    return any(operands)
+            else:
+                print(f"Unknown arithmetic operation: {operator}")
+    # <comparison_op> ::= BOTH SAEM <expr> AN <expr> | DIFFRINT <expr> AN <expr>
+    def parse_comparison_operations():
+        nonlocal index
+        lexeme = array_lexemes[index][0]
+        lexeme_type = array_lexemes[index][1]
+
+        if lexeme_type == KW_COMPARISON:
+            operator = lexeme
+            consume(lexeme)
+            # Operand 1
+            operand1 = operand()
+            # AN
+            if index < lexemes_length and array_lexemes[index][0] == "AN":
+                consume("AN")
+                # Operand 2
+                operand2 = operand()
+            if operator == "BOTH SAEM":     # x == y
+                return operand1 == operand2
+            elif operator ==  "DIFFRINT":   # x != y
+                return operand1 != operand2
+            elif operator == "BIGGR OF":  
+                return max(operand1, operand2)
+            elif operator == "SMALLR OF":  
+                return min(operand1, operand2)
+            else:
+                print(f"Unknown arithmetic operation: {operator}")
+            
 
     # ------------------- HELPER FUNCTIONS -------------------
     # Function for returning symbol table value
