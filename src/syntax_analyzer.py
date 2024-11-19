@@ -17,7 +17,7 @@ def syntax_analyzer(lexemes):
             # Increment index/position: Next token
             index += 1
         else:
-            raise SyntaxError(f"Expected '{expected_token}', but got '{array_lexemes[index][0]}'")
+            print(f"Expected '{expected_token}', but got '{array_lexemes[index][0]}'")
     
     # <program> ::= HAI <block> KTHXBYE
     def parse_program():
@@ -28,7 +28,7 @@ def syntax_analyzer(lexemes):
             parse_block() 
             consume("KTHXBYE")
         else:
-            raise SyntaxError(f"Expected 'HAI' at the start, but got '{lexeme}'")
+            print(f"Expected 'HAI' at the start, but got '{lexeme}'")
 
     # <block> ::= <output> | <variable_declarations> | <input> | <variable_assignment>
     def parse_block():
@@ -43,7 +43,7 @@ def syntax_analyzer(lexemes):
             elif lexeme == "GIMMEH":
                 parse_input()
             elif lexeme_type == ID_VAR:
-                parse_assignment()
+                parse_variable_reassignment()
             else:
                 break
 
@@ -54,9 +54,14 @@ def syntax_analyzer(lexemes):
         if lexeme == "GIMMEH":
             consume(lexeme)
             if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
+                variable = array_lexemes[index][0]
                 consume(array_lexemes[index][0])
+                value = input(f"{variable}: ")
+                parsed_value = parse_value(value)
+                update_variable_value(variable, parsed_value)
             else:
                 print("Error: Hindi ko pa alam")
+
 
     # <output> ::= VISIBLE <expression>
     def parse_output():
@@ -83,12 +88,15 @@ def syntax_analyzer(lexemes):
                 lexeme = float(lexeme)
             elif lexeme_type == LIT_NUMBR:
                 lexeme = int(lexeme)
+            elif lexeme_type == ID_VAR:
+                lexeme = get_variable_value(lexeme)
             return lexeme
         elif lexeme_type == KW_ARITHMETIC:
             value = parse_arithmethic_operations()
             return value
         elif lexeme_type == KW_CONCATENATE:
-            parse_concatenation()
+            value = parse_concatenation()
+            return value
         else:
             print("Error: Hindi ko pa alam")
 
@@ -149,7 +157,18 @@ def syntax_analyzer(lexemes):
         elif lexeme_type == LIT_NUMBAR:
             consume(lexeme)
             return float(lexeme)
-
+        
+        elif lexeme_type == LIT_TROOF:
+            consume(lexeme)
+            if lexeme == "WIN":
+                return 1
+            else:
+                return 0
+            
+        elif lexeme_type == LIT_YARN:
+            consume(lexeme)
+            return parse_value(lexeme)
+        
         # Evaluate recursively
         elif lexeme_type == KW_ARITHMETIC:
             return parse_arithmethic_operations()
@@ -157,18 +176,18 @@ def syntax_analyzer(lexemes):
         else:
             print(f"Invalid operand type: {lexeme_type}")
 
-
     # <concatenate> ::= SMOOSH <expr> AN [<expr> | (<expr> AN)*]
     def parse_concatenation():
         nonlocal index
         lexeme = array_lexemes[index][0]
         lexeme_type = array_lexemes[index][1]
+        concat_string = ""
         # SMOOSH keyword
         if lexeme_type == KW_CONCATENATE:
             consume(lexeme)
             while index < lexemes_length:
                 # expressions
-                parse_expression()
+                concat_string += str(parse_expression())
                 if index < lexemes_length and array_lexemes[index][0] == "AN":
                     consume("AN")
                 else:
@@ -176,14 +195,16 @@ def syntax_analyzer(lexemes):
             # MKAY delimiter
             if index < lexemes_length and array_lexemes[index][1] == DELIM_EXPR_END:
                 consume(array_lexemes[index][0])
+            return concat_string
 
     # <assignment> ::= var_indent R <typecasting> | var_ident R <expr>
-    def parse_assignment():
+    def parse_variable_reassignment():
         nonlocal index
         lexeme = array_lexemes[index][0]
         lexeme_type = array_lexemes[index][1]
 
         if lexeme_type == ID_VAR:
+            variable = lexeme
             # var_ident
             consume(lexeme)
             # R
@@ -191,18 +212,17 @@ def syntax_analyzer(lexemes):
                 consume(array_lexemes[index][0])
                 # Type casting
                 if index < lexemes_length and array_lexemes[index][1] == KW_TYPECAST:
-                    parse_type_casting()
+                    parse_type_casting(variable)
                 # Expression
                 else:
-                    parse_expression()
+                    update_variable_value(variable, parse_expression())
             # Type casting
             elif index < lexemes_length and array_lexemes[index][0] == "IS NOW A":
-                parse_type_casting()
+                parse_type_casting(variable)
             else:
                 print("Error: Hindi ko pa alam")
 
-
-    def parse_type_casting():
+    def parse_type_casting(variable):
         nonlocal index
         lexeme = array_lexemes[index][0]
         lexeme_type = array_lexemes[index][1]
@@ -212,13 +232,19 @@ def syntax_analyzer(lexemes):
             if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
                 variable = array_lexemes[index][0]
                 consume(variable)
-                if index < lexemes_length and array_lexemes[index][0] in ["NUMBAR", "NUMBR", "YARN", "TROOF"]:
+                if index < lexemes_length and array_lexemes[index][1] == LIT:
+                    lexeme = array_lexemes[index][0]
                     consume(array_lexemes[index][0])
+                    new_type_value = recast_variable_value(variable, lexeme)
+                    update_variable_value(variable, new_type_value)
          # <type_casting> ::= IS NOW A <literal> 
         elif lexeme == "IS NOW A":
             consume(lexeme)
             if index < lexemes_length and array_lexemes[index][1] == LIT:
+                lexeme = array_lexemes[index][0]
                 consume(array_lexemes[index][0])
+                new_type_value = recast_variable_value(variable, lexeme)
+                update_variable_value(variable, new_type_value)
 
     # <variable_declarations> ::= WAZZUP <variable_declaration> BUHBYE
     def parse_variable_declarations():
@@ -260,17 +286,69 @@ def syntax_analyzer(lexemes):
                 return value
         print(f"Variable '{var_name}' not found")
     
-    def existing_var(variable, new_value):
-        for pair in symbol_table:
-            if pair[0] == variable:
-                pair[1] = new_value
-                return True
-        return False
+    def parse_value(value):
+        # Remove quotes from YARN literals
+        if value.startswith('"') and value.endswith('"'):
+            value = value[1:-1]
+        try:
+            return int(value) 
+        except ValueError:
+            pass 
+        try:
+            return float(value)  
+        except ValueError:
+            pass  
+        return value
+            
+    def update_variable_value(variable, parsed_value):
+        for i in range(len(symbol_table)):
+            if symbol_table[i][0] == variable:
+                symbol_table[i][1] = parsed_value
+                return
+        symbol_table.append([variable, parsed_value])
+
+    def recast_variable_value(variable, new_type):
+        for var, value in symbol_table:
+    
+            if var == variable:
+                old_value = value
+
+                # Perform casting 
+                if new_type == "NUMBR":
+                    try:
+                        new_value = int(old_value)  
+                    except ValueError:
+                        print(f"Cannot cast value '{old_value}' to NUMBR")
+                elif new_type == "NUMBAR":
+                    try:
+                        new_value = float(old_value) 
+                    except ValueError:
+                        print(f"Cannot cast value '{old_value}' to NUMBAR")
+                elif new_type == "YARN":
+                    new_value = str(old_value)  
+                elif new_type == "TROOF":
+                    if isinstance(old_value, (int, float)):
+                        if old_value == 0:
+                            new_value = False  
+                        else:
+                            new_value = True 
+                    elif isinstance(old_value, str):
+                        old_value = old_value.strip().lower()  
+                        if old_value in ['true', '1']:
+                            new_value = True  
+                        else:
+                            new_value = False  
+                else:
+                    print(f"Unsupported type: {new_type}")
+                return new_value
+        print(f"Variable '{variable}' not found in symbol table.")
 
     # Start parsing the program
     parse_program()
     print("Syntax analysis successful!")
     print("Symbol Table: ", symbol_table)
+
+   
 
 def comments_remover(array_lexemes):
     filtered_lexemes = []

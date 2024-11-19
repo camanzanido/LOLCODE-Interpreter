@@ -11,13 +11,13 @@ HAI
     VISIBLE "String 2: "
     GIMMEH y
 
-    VISIBLE SMOOSH x AN y
+    VISIBLE SMOOSH x AN y MKAY
 
-    VISIBLE SMOOSH x AN x AN x AN y AN y
+    VISIBLE SMOOSH x AN x AN x AN y AN y MKAY
 
-    x R SMOOSH x AN y
-    y R 100
-    VISIBLE x AN 52615 AN y AN MOD OF 10 AN 6 AN "End!"
+    x R SMOOSH x AN y MKAY
+    y R 100 
+    VISIBLE SMOOSH x AN 52615 AN y AN MOD OF 10 AN 6 AN "End!" MKAY
 
     VISIBLE 10 AN y
     y IS NOW A NUMBAR
