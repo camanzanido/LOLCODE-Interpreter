@@ -54,6 +54,8 @@ def syntax_analyzer(lexemes):
                 parse_function()
             elif lexeme == "I IZ":
                 parse_function_call()
+            elif lexeme_type == KW_COMPARISON:
+                parse_comparison_operations()
             else:
                 break
  
@@ -110,21 +112,22 @@ def syntax_analyzer(lexemes):
         elif lexeme_type == KW_ARITHMETIC:
             value = parse_arithmethic_operations()
             it = value
-            print(f"it: {it}")
             return value
+        elif lexeme == "GIMMEH":
+            parse_input()
         elif lexeme_type == KW_CONCATENATE:
             value = parse_concatenation()
             return value
         elif lexeme_type == KW_BOOLEAN:
             value = parse_boolean_operations()
             it = value
-            print(f"it: {it}")
             return value
         elif lexeme_type == KW_COMPARISON:
             value = parse_comparison_operations()
             it = value
-            print(f"it: {it}")
             return value
+        elif lexeme_type == "O RLY?":
+            parse_if_else_statements()
         elif lexeme_type == KW_OUTPUT:
             parse_output()
         elif lexeme == "I IZ":
@@ -260,7 +263,6 @@ def syntax_analyzer(lexemes):
             elif index < lexemes_length and array_lexemes[index][0] == "IS NOW A":
                 parse_type_casting(variable)
             else:
-                print("2")
                 print("Error: Hindi ko pa alam")
 
     # <typecasting> ::= MAEK var_ident literal | IS NOW A literal
@@ -324,7 +326,6 @@ def syntax_analyzer(lexemes):
                 else:
                     symbol_table.append([variable, "NOOB"])
             else:
-                print("4")
                 print("Error: Hindi ko pa alam")
 
     # <boolean_op> :: = BOTH OF <expr> AN <expr> | EITHER OF <expr> AN <expr> | WON OF <expr> AN <expr> | NOT <expr> | ALL OF <expr> MKAY | ANY OF <expr> MKAY
@@ -347,22 +348,18 @@ def syntax_analyzer(lexemes):
 
             if operator == "BOTH OF":
                 if operand2 is not None:
-                    print(f"and : {operand1 and operand2}")
                     return operand1 and operand2
             elif operator == "EITHER OF":
                 if operand2 is not None:
-                    print(f"or : {operand1 or operand2}")
                     return operand1 or operand2
 
             elif operator == "WON OF":
                 if operand2 is not None:
-                    print(f"won: {bool(operand1) ^ bool(operand2)}")
                     return bool(operand1) ^ bool(operand2)
                 # else:
                 #     raise SyntaxError("Expected second operand for 'WON OF'")
 
             elif operator == "NOT":
-                print(f"not : {not operand1}")
                 return not operand1
             
             # since ALL OF & ANY OF cannot be nested, separate to other boolean operations that can be nested
@@ -370,7 +367,6 @@ def syntax_analyzer(lexemes):
                 operands = []
                 # get all operands until MKAY
                 oper = operand()
-                print(f"oper:{oper}")
                 if oper not in ["BOTH OF", "EITHER OF", "NOT", "WON OF"]:
                     operands.append(oper)
 
@@ -378,7 +374,6 @@ def syntax_analyzer(lexemes):
                     if index < lexemes_length and array_lexemes[index][0] == "AN":
                         consume("AN")
                         oper = operand()
-                        print(f"oper:{oper}")
                         operands.append(oper) # append in the list
                     # AN
                     
@@ -386,10 +381,8 @@ def syntax_analyzer(lexemes):
                 consume("MKAY")
 
                 if operator == "ALL OF":
-                    print(f"all : {all(operands)}")
                     return all(operands) 
                 elif operator == "ANY OF":
-                    print(f"any : {any(operands)}")
                     return any(operands)
             else:
                 print(f"Unknown arithmetic operation: {operator}")
@@ -410,16 +403,12 @@ def syntax_analyzer(lexemes):
                 # Operand 2
                 operand2 = operand()
             if operator == "BOTH SAEM":     # x == y
-                print(f"== : {operand1==operand2}")
                 return operand1 == operand2
             elif operator ==  "DIFFRINT":   # x != y
-                print(f"!= : {operand1!=operand2}")
                 return operand1 != operand2
             elif operator == "BIGGR OF":  
-                print(f"> : {max(operand1,operand2)}")
                 return max(operand1, operand2)
             elif operator == "SMALLR OF": 
-                print(f"< : {min(operand1,operand2)}") 
                 return min(operand1, operand2)
             else:
                 print(f"Unknown arithmetic operation: {operator}")
@@ -428,39 +417,25 @@ def syntax_analyzer(lexemes):
     def parse_if_else_statements():  # Note: NO MEBBE YET
         nonlocal index, it
         lexeme = array_lexemes[index][0]
-        condition = []          
-        condition.append(it) 
+        # condition = []          
+        # condition.append(it) 
         if lexeme == "O RLY?":
             consume(lexeme)
-            cond = condition[0]
+            # cond = condition[0]
             # while index < lexemes_length and array_lexemes[index][0] != "OIC" or index < lexemes_length and array_lexemes[index][0] != "NO WAI" :
-            curr_lexeme = array_lexemes[index][0]
-            if cond and curr_lexeme == "YA RLY":
+            if array_lexemes[index][0] == "YA RLY":
                 consume("YA RLY")
-                parse_code_block()
-
-            elif not cond and array_lexemes[index][0] == "NO WAI":
-                    consume("NO WAI")
-                    parse_code_block()
+                while (index < lexemes_length and array_lexemes[index][0] not in ["NO WAI", "OIC"]):
+                    parse_expression()
+            
+            if array_lexemes[index][0] == "NO WAI":
+                consume("NO WAI")
+                while (index < lexemes_length and array_lexemes[index][0] != "OIC"):
+                    parse_expression()
+                
             # Delimter
             if array_lexemes[index][0] == "OIC":
                 consume("OIC")
-
-    def parse_code_block():
-        nonlocal index
-        while index < lexemes_length:
-            lexeme = array_lexemes[index][0]
-            lexeme_type = array_lexemes[index][1]
-            if lexeme == "VISIBLE":
-                parse_output()
-            elif lexeme == "GIMMEH":
-                parse_input()
-            elif lexeme_type == ID_VAR:
-                parse_variable_reassignment()
-            elif lexeme_type == "O RLY?":
-                parse_if_else_statements()
-            else:
-                break
 
     # <switch-case> ::= WTF? <linebreak> <case>+ <linebreak> <default_case>?  OIC
     def parse_switch_case_statement():
@@ -479,20 +454,17 @@ def syntax_analyzer(lexemes):
 
                 if curr_lexeme == "OMG":
                     consume("OMG")
-                    print(array_lexemes[index][0])
-                    print(type(array_lexemes[index][0]))        # hindi na typecast
                     if not matched and condition == array_lexemes[index][0]:
-                        print("in omg")
                         matched = True
                         consume(array_lexemes[index][0])
                         while index < lexemes_length and array_lexemes[index][0] != "GTFO":
-                            parse_code_block()
+                            parse_expression()
                         consume("GTFO")
 
                 elif not matched and curr_lexeme == "OMGWTF":
                     consume("OMGWTF")
                     while index < lexemes_length and array_lexemes[index][0] != "GTFO":
-                        parse_code_block()
+                        parse_expression()
                     consume("GTFO")
             # Delimter
             consume("OIC")
@@ -526,14 +498,12 @@ def syntax_analyzer(lexemes):
             if condition_type == 'WILE':
                 while parse_comparison_operations():  
                     var_value = get_variable_value(varident)
-                    print("in wile")
                     # parse_code_block()
                     if operation == "NERFIN":
                         var_value -= 1
                     else:
                         var_value += 1
                     update_variable_value(varident, var_value)
-                    print(var_value)
             else:  # TIL
                 while not parse_comparison_operations(): 
                     var_value = get_variable_value(varident)
@@ -544,7 +514,6 @@ def syntax_analyzer(lexemes):
                     else:
                         var_value += 1
                     update_variable_value(varident, var_value)
-                    print(var_value)
 
             if array_lexemes[index][0] == "IM OUTTA YR":
                 consume("IM OUTTA YR")
