@@ -526,8 +526,8 @@ def syntax_analyzer(lexemes):
             if condition_type == 'WILE':
                 while True:  
                     index = comp_index # change the index to the comparison
-                    if parse_comparison_operations():  # Now we are evaluating the condition
-                        print(f"Loop WILE: {varident} = {get_variable_value(varident)}")  # Debugging
+                    if parse_comparison_operations():  
+                        print(f"Loop WILE: {varident} = {get_variable_value(varident)}")  
                         var_value = get_variable_value(varident)
                         parse_block()  
                         if operation == "NERFIN":
