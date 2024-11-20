@@ -469,36 +469,51 @@ def syntax_analyzer(lexemes):
                     break
     
                 elif curr_lexeme == "OMG":
+                    # ====================== NEW ==================
+                    # OMG KEYWORD
                     consume("OMG")
-                    case_value = array_lexemes[index][0]
-                    
-                    consume(case_value) 
-                    if not matched and condition == int(case_value):  
-                        matched = True
-                        while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]):
+                    # Case value
+                    if index < lexemes_length and array_lexemes[index][1] in [LIT_YARN, LIT_NUMBR, LIT_NUMBAR, LIT_TROOF, ID_VAR]:
+                        consume(array_lexemes[index][0])
+                        # Expressions
+                        while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG"]):
                             parse_expression() 
-                    else:  
-                        while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]):
-                            consume(array_lexemes[index][0])
+                        # GTFO
+                        if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+                            consume("GTFO")
 
-                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
-                        consume("GTFO")
+                    # ================ ORIGINAL =============
+                     
+                    # if not matched and condition == int(case_value):  
+                    #     matched = True
+                    #     while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", ]):
+                    #         parse_expression() 
+                    # else:  
+                    #     while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]):
+                    #         print(array_lexemes[index][0]) #print ko to
+                    #         consume(array_lexemes[index][0])
+
 
                 elif curr_lexeme == "OMGWTF":
                     consume("OMGWTF")
-                    if not matched: 
-                        matched = True
-                        while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
-                            parse_expression()
-                    else:  
-                        while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
-                            consume(array_lexemes[index][0])
+                    # ================ ORIGINAL =============
+                    # if not matched: 
+                    #     matched = True
+                    #     while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
+                    #         parse_expression()
+                    # else:  
+                    #     while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
+                    #         consume(array_lexemes[index][0])
 
+                    # ====================== NEW ==================
+                    while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
+                        parse_expression()
                     if index < lexemes_length and array_lexemes[index][0] == "GTFO":
                         consume("GTFO")
 
                 else:
                     print(f"Unexpected token {curr_lexeme} in WTF? statement.")
+                    break
 
     # <loop> ::= IM IN YR <label> operation YR varident (<til_op> | <wile_op>) <linebreak> <code_block><linebreak> IM OUTTA YR <label>
     def parse_loop():
