@@ -115,18 +115,22 @@ def syntax_analyzer(lexemes):
             return value
         elif lexeme == "GIMMEH":
             parse_input()
+        elif lexeme == "VISIBLE":
+            parse_output()
         elif lexeme_type == KW_CONCATENATE:
             value = parse_concatenation()
             return value
         elif lexeme_type == KW_BOOLEAN:
             value = parse_boolean_operations()
             it = value
+            print(f"boolean expr: {it}")
             return value
         elif lexeme_type == KW_COMPARISON:
             value = parse_comparison_operations()
             it = value
+            print(f"comparison: {it}")
             return value
-        elif lexeme_type == "O RLY?":
+        elif lexeme == "O RLY?":
             parse_if_else_statements()
         elif lexeme_type == KW_OUTPUT:
             parse_output()
@@ -134,6 +138,10 @@ def syntax_analyzer(lexemes):
             parse_function_call()
         elif lexeme == "IT":
             return
+        elif lexeme == "AN":    
+            consume("AN")
+        elif lexeme == "OMG":
+            consume("OMG")
         else:
             print("3")
             print("Error: Hindi ko pa alam")
@@ -212,7 +220,6 @@ def syntax_analyzer(lexemes):
             return parse_boolean_operations()
         elif lexeme_type == KW_COMPARISON:
             return parse_comparison_operations()
-
         else:
             print(f"Invalid operand type: {lexeme_type}")
 
@@ -356,8 +363,6 @@ def syntax_analyzer(lexemes):
             elif operator == "WON OF":
                 if operand2 is not None:
                     return bool(operand1) ^ bool(operand2)
-                # else:
-                #     raise SyntaxError("Expected second operand for 'WON OF'")
 
             elif operator == "NOT":
                 return not operand1
@@ -367,22 +372,27 @@ def syntax_analyzer(lexemes):
                 operands = []
                 # get all operands until MKAY
                 oper = operand()
+
                 if oper not in ["BOTH OF", "EITHER OF", "NOT", "WON OF"]:
-                    operands.append(oper)
+                    print(array_lexemes[index][0])
+                    if oper:
+                        operands.append(oper)
 
                 while index < lexemes_length and array_lexemes[index][0] != "MKAY":
                     if index < lexemes_length and array_lexemes[index][0] == "AN":
                         consume("AN")
-                        oper = operand()
-                        operands.append(oper) # append in the list
-                    # AN
-                    
+                        opern = operand()
+                        if opern:
+                            operands.append(opern) # append in the list
                 # MKAY
+                print(operands)
                 consume("MKAY")
 
                 if operator == "ALL OF":
+                    print("ALL")
                     return all(operands) 
                 elif operator == "ANY OF":
+                    print("ANY")
                     return any(operands)
             else:
                 print(f"Unknown arithmetic operation: {operator}")
@@ -415,61 +425,78 @@ def syntax_analyzer(lexemes):
 
     #<if-then> ::= <expr><linebreak>O RLY?<linebreak>YA RLY<linebreak> <code_block> <linebreak> <else-if>* <linebreak> NO WAI <linebreak> <code_block> <linebreak>OIC
     def parse_if_else_statements():  # Note: NO MEBBE YET
-        nonlocal index, it
-        lexeme = array_lexemes[index][0]
-        # condition = []          
-        # condition.append(it) 
-        if lexeme == "O RLY?":
-            consume(lexeme)
-            # cond = condition[0]
-            # while index < lexemes_length and array_lexemes[index][0] != "OIC" or index < lexemes_length and array_lexemes[index][0] != "NO WAI" :
-            if array_lexemes[index][0] == "YA RLY":
-                consume("YA RLY")
-                while (index < lexemes_length and array_lexemes[index][0] not in ["NO WAI", "OIC"]):
-                    parse_expression()
-            
-            if array_lexemes[index][0] == "NO WAI":
-                consume("NO WAI")
-                while (index < lexemes_length and array_lexemes[index][0] != "OIC"):
-                    parse_expression()
+            nonlocal index, it
+            lexeme = array_lexemes[index][0]
+            # condition = []          
+            # condition.append(it) 
+            if lexeme == "O RLY?":
+                consume(lexeme)
+                # cond = condition[0]
+                # while index < lexemes_length and array_lexemes[index][0] != "OIC" or index < lexemes_length and array_lexemes[index][0] != "NO WAI" :
+                if array_lexemes[index][0] == "YA RLY":
+                    consume("YA RLY")
+                    while (index < lexemes_length and array_lexemes[index][0] not in ["NO WAI", "OIC"]):
+                        parse_expression()
                 
-            # Delimter
-            if array_lexemes[index][0] == "OIC":
-                consume("OIC")
+                if array_lexemes[index][0] == "NO WAI":
+                    consume("NO WAI")
+                    while (index < lexemes_length and array_lexemes[index][0] != "OIC"):
+                        parse_expression()
+                    
+                # Delimter
+                if array_lexemes[index][0] == "OIC":
+                    consume("OIC")
 
     # <switch-case> ::= WTF? <linebreak> <case>+ <linebreak> <default_case>?  OIC
     def parse_switch_case_statement():
         nonlocal index, it
         lexeme = array_lexemes[index][0]
-        # cond = array_lexemes[index-1][0]
-        # print(cond)
-        # print(get_variable_value(cond))
         condition = it
         matched = False
-        if lexeme == "WTF?":
-           # operator = lexeme
-            consume(lexeme)
-            while index < lexemes_length and array_lexemes[index][0] != "OIC":
-                curr_lexeme = array_lexemes[index][0]
 
-                if curr_lexeme == "OMG":
+        if lexeme == "WTF?":
+            consume(lexeme)
+            while index < lexemes_length: 
+                curr_lexeme = array_lexemes[index][0]
+         
+                if curr_lexeme == "OIC":
+                    consume("OIC")
+                    break
+    
+                elif curr_lexeme == "OMG":
                     consume("OMG")
-                    if not matched and condition == array_lexemes[index][0]:
+                    case_value = array_lexemes[index][0]
+                    
+                    consume(case_value) 
+                    if not matched and condition == int(case_value):  
                         matched = True
-                        consume(array_lexemes[index][0])
-                        while index < lexemes_length and array_lexemes[index][0] != "GTFO":
-                            parse_expression()
+                        while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]):
+                            parse_expression() 
+                    else:  
+                        while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]):
+                            consume(array_lexemes[index][0])
+
+                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
                         consume("GTFO")
 
-                elif not matched and curr_lexeme == "OMGWTF":
+                elif curr_lexeme == "OMGWTF":
                     consume("OMGWTF")
-                    while index < lexemes_length and array_lexemes[index][0] != "GTFO":
-                        parse_expression()
-                    consume("GTFO")
-            # Delimter
-            consume("OIC")
+                    if not matched: 
+                        matched = True
+                        while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
+                            parse_expression()
+                    else:  
+                        while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
+                            consume(array_lexemes[index][0])
 
-    # IM IN YR <label> operation YR varident (<til_op> | <wile_op>) <linebreak> <code_block><linebreak> IM OUTTA YR <label>
+                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+                        consume("GTFO")
+
+                else:
+                    print(f"Unexpected token {curr_lexeme} in WTF? statement.")
+
+
+    # <loop> ::= IM IN YR <label> operation YR varident (<til_op> | <wile_op>) <linebreak> <code_block><linebreak> IM OUTTA YR <label>
     def parse_loop():
         nonlocal index
         lexeme = array_lexemes[index][0]
