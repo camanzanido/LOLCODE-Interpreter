@@ -340,7 +340,6 @@ def syntax_analyzer(lexemes):
         nonlocal index
         lexeme = array_lexemes[index][0]
         lexeme_type = array_lexemes[index][1]
-
         if lexeme_type == KW_BOOLEAN:
             operator = lexeme
             consume(lexeme)
@@ -352,51 +351,55 @@ def syntax_analyzer(lexemes):
             if index < lexemes_length and array_lexemes[index][0] == "AN":
                 consume("AN")
                 operand2 = operand()
-
             if operator == "BOTH OF":
                 if operand2 is not None:
                     return operand1 and operand2
+                print("No second Operand")
             elif operator == "EITHER OF":
                 if operand2 is not None:
                     return operand1 or operand2
+                print("No second Operand")
 
             elif operator == "WON OF":
                 if operand2 is not None:
                     return bool(operand1) ^ bool(operand2)
+                print("No second Operand")
 
             elif operator == "NOT":
                 return not operand1
             
             # since ALL OF & ANY OF cannot be nested, separate to other boolean operations that can be nested
-            elif operator == "ALL OF" or operator == "ANY OF":
-                operands = []
-                # get all operands until MKAY
-                oper = operand()
+            elif operator in ["ALL OF", "ANY OF"]:
+                operands = []  
+                print(f"Parsing {operator}")
 
-                if oper not in ["BOTH OF", "EITHER OF", "NOT", "WON OF"]:
-                    print(array_lexemes[index][0])
-                    if oper:
-                        operands.append(oper)
-
+                # Collect all operands until "MKAY"
                 while index < lexemes_length and array_lexemes[index][0] != "MKAY":
-                    if index < lexemes_length and array_lexemes[index][0] == "AN":
+                 
+                    if array_lexemes[index][0] == "AN":
                         consume("AN")
-                        opern = operand()
-                        if opern:
-                            operands.append(opern) # append in the list
-                # MKAY
-                print(operands)
-                consume("MKAY")
+                    
+                    if array_lexemes[index][0] in ["ALL OF", "ANY OF"]:
+                        print(f"Error: Nested {array_lexemes[index][0]} is not allowed.")
+                        return
+                    
+                    operand_value = operand()
+                    if operand_value is not None:
+                        operands.append(operand_value)
 
+              
+                if index < lexemes_length and array_lexemes[index][0] == "MKAY":
+                    consume("MKAY")  
+
+                # Perform the operation
                 if operator == "ALL OF":
-                    print("ALL")
-                    return all(operands) 
+                    return all(operands)
                 elif operator == "ANY OF":
-                    print("ANY")
                     return any(operands)
             else:
                 print(f"Unknown arithmetic operation: {operator}")
 
+    # ===================================================================== COMPARISON OPERATIONS =====================================================================
     # <comparison_op> ::= BOTH SAEM <expr> AN <expr> | DIFFRINT <expr> AN <expr>
     def parse_comparison_operations():
         nonlocal index
@@ -423,7 +426,8 @@ def syntax_analyzer(lexemes):
                 return min(operand1, operand2)
             else:
                 print(f"Unknown boolean operation: {operator}")
-    # ===================================================================== CONDITIONAL STATEMENTS =====================================================================
+
+    # ===================================================================== CONTROL FLOW =====================================================================
     #<if-then> ::= <expr><linebreak>O RLY?<linebreak>YA RLY<linebreak> <code_block> <linebreak> <else-if>* <linebreak> NO WAI <linebreak> <code_block> <linebreak>OIC
     def parse_if_else_statements():  # Note: NO MEBBE YET
             nonlocal index, it
@@ -447,8 +451,8 @@ def syntax_analyzer(lexemes):
                 # Delimter
                 if array_lexemes[index][0] == "OIC":
                     consume("OIC")
-
-    # <switch-case> ::= WTF? <linebreak> <case>+ <linebreak> <default_case>?  OIC
+ 
+     # <switch-case> ::= WTF? <linebreak> <case>+ <linebreak> <default_case>?  OIC
     def parse_switch_case_statement():
         nonlocal index, it
         lexeme = array_lexemes[index][0]
@@ -496,7 +500,6 @@ def syntax_analyzer(lexemes):
                 else:
                     print(f"Unexpected token {curr_lexeme} in WTF? statement.")
 
-
     # <loop> ::= IM IN YR <label> operation YR varident (<til_op> | <wile_op>) <linebreak> <code_block><linebreak> IM OUTTA YR <label>
     def parse_loop():
         nonlocal index
@@ -522,52 +525,29 @@ def syntax_analyzer(lexemes):
             consume(condition_type)
 
             comp_index = index # will hold the starting index of the comparison
-      
-            if condition_type == 'WILE':
-                while True:  
-                    index = comp_index # change the index to the comparison
-                    if parse_comparison_operations():  
-                        print(f"Loop WILE: {varident} = {get_variable_value(varident)}")  
-                        var_value = get_variable_value(varident)
-                        parse_block()  
-                        if operation == "NERFIN":
-                            print("nerfin")
-                            var_value -= 1
-                        else:
-                            print("uppin")
-                            print(var_value)
-                            var_value = var_value + 1
-                            print(var_value)
+            continue_index = index  # will hold the index b4 comparison
+            
+            while True:
+                index = comp_index
+                condition_met = parse_comparison_operations()
 
-                        print(f"Updated {varident}: {var_value}")
-                        update_variable_value(varident, var_value)
-                        consume(array_lexemes[index][0])
+                if (condition_type == "WILE" and condition_met) or (condition_type == "TIL" and not condition_met):
+                    var_value = get_variable_value(varident)
+                    parse_block()
+                    if operation == "NERFIN":
+                        var_value -= 1
                     else:
-                        #consume(array_lexemes[index][0])
-                        break 
-            else: 
-                while True:
-                    if not parse_comparison_operations():  # Now we are evaluating the condition
-                        print(f"Loop TIL: {varident} = {get_variable_value(varident)}")  # Debugging
-                        var_value = get_variable_value(varident)
-                        parse_block()  
-                        if operation == "NERFIN":
-                            print("nerfin")
-                            var_value -= 1
-                        else:
-                            print("uppin")
-                            print(var_value)
-                            var_value = var_value + 1
-                            print(var_value)
+                        var_value += 1
+                    update_variable_value(varident, var_value)
+                    continue_index = index
+                else:
+                    index= continue_index
+                    break
 
-                        print(f"Updated {varident}: {var_value}")
-                        update_variable_value(varident, var_value)
-                    else:
-                        break 
 
             if array_lexemes[index][0] == "IM OUTTA YR":
                 consume("IM OUTTA YR")
-                consume(label)  
+                consume(label)
             
     # ===================================================================== FUNCTIONS =====================================================================
     # <function> ::= HOW IZ I func_ident <parameters> <function_body> <return_statement> IF U SAY SO
