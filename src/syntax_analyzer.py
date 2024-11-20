@@ -334,7 +334,7 @@ def syntax_analyzer(lexemes):
                     symbol_table.append([variable, "NOOB"])
             else:
                 print("Error: Hindi ko pa alam")
-
+    # ===================================================================== BOOLEAN OPERATIONS =====================================================================
     # <boolean_op> :: = BOTH OF <expr> AN <expr> | EITHER OF <expr> AN <expr> | WON OF <expr> AN <expr> | NOT <expr> | ALL OF <expr> MKAY | ANY OF <expr> MKAY
     def parse_boolean_operations():
         nonlocal index
@@ -396,6 +396,7 @@ def syntax_analyzer(lexemes):
                     return any(operands)
             else:
                 print(f"Unknown arithmetic operation: {operator}")
+
     # <comparison_op> ::= BOTH SAEM <expr> AN <expr> | DIFFRINT <expr> AN <expr>
     def parse_comparison_operations():
         nonlocal index
@@ -421,8 +422,8 @@ def syntax_analyzer(lexemes):
             elif operator == "SMALLR OF": 
                 return min(operand1, operand2)
             else:
-                print(f"Unknown arithmetic operation: {operator}")
-
+                print(f"Unknown boolean operation: {operator}")
+    # ===================================================================== CONDITIONAL STATEMENTS =====================================================================
     #<if-then> ::= <expr><linebreak>O RLY?<linebreak>YA RLY<linebreak> <code_block> <linebreak> <else-if>* <linebreak> NO WAI <linebreak> <code_block> <linebreak>OIC
     def parse_if_else_statements():  # Note: NO MEBBE YET
             nonlocal index, it
@@ -500,7 +501,6 @@ def syntax_analyzer(lexemes):
     def parse_loop():
         nonlocal index
         lexeme = array_lexemes[index][0]
-
         if lexeme == "IM IN YR":
             consume("IM IN YR")
             label = array_lexemes[index][0]
@@ -520,27 +520,50 @@ def syntax_analyzer(lexemes):
             if condition_type not in ["WILE", "TIL"]:
                 print(f"Expected 'WILE' or 'TIL', found {condition_type}")
             consume(condition_type)
-        
-               # WILE 
+
+            comp_index = index # will hold the starting index of the comparison
+      
             if condition_type == 'WILE':
-                while parse_comparison_operations():  
-                    var_value = get_variable_value(varident)
-                    # parse_code_block()
-                    if operation == "NERFIN":
-                        var_value -= 1
+                while True:  
+                    index = comp_index # change the index to the comparison
+                    if parse_comparison_operations():  # Now we are evaluating the condition
+                        print(f"Loop WILE: {varident} = {get_variable_value(varident)}")  # Debugging
+                        var_value = get_variable_value(varident)
+                        parse_block()  
+                        if operation == "NERFIN":
+                            print("nerfin")
+                            var_value -= 1
+                        else:
+                            print("uppin")
+                            print(var_value)
+                            var_value = var_value + 1
+                            print(var_value)
+
+                        print(f"Updated {varident}: {var_value}")
+                        update_variable_value(varident, var_value)
+                        consume(array_lexemes[index][0])
                     else:
-                        var_value += 1
-                    update_variable_value(varident, var_value)
-            else:  # TIL
-                while not parse_comparison_operations(): 
-                    var_value = get_variable_value(varident)
-                    print("in til")
-                    # parse_code_block()
-                    if operation == "NERFIN":
-                        var_value -= 1
+                        #consume(array_lexemes[index][0])
+                        break 
+            else: 
+                while True:
+                    if not parse_comparison_operations():  # Now we are evaluating the condition
+                        print(f"Loop TIL: {varident} = {get_variable_value(varident)}")  # Debugging
+                        var_value = get_variable_value(varident)
+                        parse_block()  
+                        if operation == "NERFIN":
+                            print("nerfin")
+                            var_value -= 1
+                        else:
+                            print("uppin")
+                            print(var_value)
+                            var_value = var_value + 1
+                            print(var_value)
+
+                        print(f"Updated {varident}: {var_value}")
+                        update_variable_value(varident, var_value)
                     else:
-                        var_value += 1
-                    update_variable_value(varident, var_value)
+                        break 
 
             if array_lexemes[index][0] == "IM OUTTA YR":
                 consume("IM OUTTA YR")
