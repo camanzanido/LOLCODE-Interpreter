@@ -259,7 +259,7 @@ def lexemes_matcher (line, code):
         token_list.append(type)
         token_list.append(LIT)
 
-    elif re.search("^[a-zA-Z][a-zA-Z0-9_]*( )?", line) != None:
+    elif re.search("^[a-zA-Z]a-zA-Z0-9_]*( )?", line) != None:
         variable = re.search("[a-zA-Z][a-zA-Z0-9_]*( )?", line).group()
         token_list.append(variable)
         token_list.append(ID_VAR)

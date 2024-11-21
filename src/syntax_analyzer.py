@@ -10,6 +10,17 @@ def syntax_analyzer(lexemes):
     it = 0
     lexemes_length = len(array_lexemes)
 
+    errors = []
+
+    # Helper to add error messages
+    def add_error(message):
+        if index < lexemes_length:
+            lexeme = array_lexemes[index]
+            errors.append(f"Error at token '{lexeme[0]}': {message}")
+        else:
+            errors.append(f"Error at end of input: {message}")
+
+
     # Consume function: Proceeds to the next token
     def consume(expected_token):
         nonlocal index
@@ -17,18 +28,34 @@ def syntax_analyzer(lexemes):
             # Increment index/position: Next token
             index += 1
         else:
+            add_error(f"Expected '{expected_token}', but got '{array_lexemes[index][0]}'")
             print(f"Expected '{expected_token}', but got '{array_lexemes[index][0]}'")
     
     # <program> ::= HAI <block> KTHXBYE
     def parse_program():
         nonlocal index
-        lexeme = array_lexemes[index][0]
-        if lexeme == "HAI":
-            consume(lexeme)
-            parse_block() 
-            consume("KTHXBYE")
+        if index < lexemes_length and array_lexemes[index][0] == "HAI":
+            consume("HAI")
+            parse_block()
+            if index < lexemes_length and array_lexemes[index][0] == "KTHXBYE":
+                consume("KTHXBYE")
+            else:
+                add_error("Expected 'KTHXBYE' to end the program")
+                print("Expected 'KTHXBYE' to end the program")
         else:
-            print(f"Expected 'HAI' at the start, but got '{lexeme}'")
+            add_error("Expected 'HAI' at the start of the program")
+            print("Expected 'HAI' at the start of the program")
+
+    # # <program> ::= HAI <block> KTHXBYE
+    # def parse_program():
+    #     nonlocal index
+    #     lexeme = array_lexemes[index][0]
+    #     if lexeme == "HAI":
+    #         consume(lexeme)
+    #         parse_block() 
+    #         consume("KTHXBYE")
+    #     else:
+    #         print(f"Expected 'HAI' at the start, but got '{lexeme}'")
 
     # <block> ::= <output> | <variable_declarations> | <input> | <variable_assignment>
     def parse_block():
@@ -43,7 +70,11 @@ def syntax_analyzer(lexemes):
             elif lexeme == "GIMMEH":
                 parse_input()
             elif lexeme_type == ID_VAR:
-                parse_variable_reassignment()
+                if array_lexemes[index+1][0] == "WTF?":
+                    consume(array_lexemes[index][0] )
+                    parse_switch_case_statement()
+                else:
+                    parse_variable_reassignment()
             elif lexeme == "O RLY?":
                 parse_if_else_statements()
             elif lexeme == "WTF?":
@@ -51,12 +82,17 @@ def syntax_analyzer(lexemes):
             elif lexeme == "IM IN YR":
                 parse_loop()
             elif lexeme_type == ID_FUNC:
+                print("hi")
                 parse_function()
             elif lexeme == "I IZ":
                 parse_function_call()
             elif lexeme_type == KW_COMPARISON:
                 parse_comparison_operations()
+            elif lexeme == "KTHXBYE":
+                break
             else:
+                add_error(f"Unexpected token '{lexeme}'")
+                print(f"Unexpected token '{lexeme}'")
                 break
  
     # <input> ::= GIMMEH <var_ident> 
@@ -76,7 +112,9 @@ def syntax_analyzer(lexemes):
                 update_variable_value(variable, parsed_value)
             else:
                 print("1")
-                print("Error: Hindi ko pa alam")
+                print("Expected 'GIMMEH' to read input")
+                add_error("Expected 'GIMMEH' to read input")
+
 
 
     # <output> ::= VISIBLE <expression>
@@ -91,6 +129,9 @@ def syntax_analyzer(lexemes):
                 if index < lexemes_length and array_lexemes[index][0] == "AN":
                     consume("AN")
                 else:
+                    # print("Expected 'VISIBLE' to print output")
+                    # add_error("Expected 'VISIBLE' to print output")
+                   
                     break
     
     # ===================================================================== EXPRESSIONS =====================================================================
@@ -144,7 +185,8 @@ def syntax_analyzer(lexemes):
             consume("OMG")
         else:
             print("3")
-            print("Error: Hindi ko pa alam")
+            add_error("Invalid expression")
+            print("Invalid expression")
 
     # ===================================================================== ARITHMETHIC OPERATIONS =====================================================================
     # <arithmethic> ::= <operations> <literal|var_indent|arithmethic> AN <literal|var_indent|arithmethic>
@@ -179,7 +221,8 @@ def syntax_analyzer(lexemes):
             elif operator == "SMALLR OF":
                 return min(operand1, operand2)
             else:
-                print(f"Unknown arithmetic operation: {operator}")
+                add_error("Unsupported operation")
+                print("Unsupported operation")
 
     # <literal|var_indent|arithmethic>
     def operand():
@@ -222,6 +265,7 @@ def syntax_analyzer(lexemes):
             return parse_comparison_operations()
         else:
             print(f"Invalid operand type: {lexeme_type}")
+            exit()
 
     # ===================================================================== SMOOSH KEYWORD =====================================================================
     # <concatenate> ::= SMOOSH <expr> AN [<expr> | (<expr> AN)*]
@@ -270,7 +314,7 @@ def syntax_analyzer(lexemes):
             elif index < lexemes_length and array_lexemes[index][0] == "IS NOW A":
                 parse_type_casting(variable)
             else:
-                print("Error: Hindi ko pa alam")
+                print("Error: Invalid variable reassignment syntax.")
 
     # <typecasting> ::= MAEK var_ident literal | IS NOW A literal
     def parse_type_casting(variable):
@@ -333,7 +377,7 @@ def syntax_analyzer(lexemes):
                 else:
                     symbol_table.append([variable, "NOOB"])
             else:
-                print("Error: Hindi ko pa alam")
+                print(f"Error: Unexpected token '{array_lexemes[index][0]}' found while parsing variable declaration.")
     # ===================================================================== BOOLEAN OPERATIONS =====================================================================
     # <boolean_op> :: = BOTH OF <expr> AN <expr> | EITHER OF <expr> AN <expr> | WON OF <expr> AN <expr> | NOT <expr> | ALL OF <expr> MKAY | ANY OF <expr> MKAY
     def parse_boolean_operations():
@@ -548,7 +592,8 @@ def syntax_analyzer(lexemes):
 
                 if (condition_type == "WILE" and condition_met) or (condition_type == "TIL" and not condition_met):
                     var_value = get_variable_value(varident)
-                    parse_block()
+                    # parse_block()
+                    parse_expression()
                     if operation == "NERFIN":
                         var_value -= 1
                     else:
@@ -561,6 +606,7 @@ def syntax_analyzer(lexemes):
 
 
             if array_lexemes[index][0] == "IM OUTTA YR":
+                print("hi")
                 consume("IM OUTTA YR")
                 consume(label)
             
@@ -710,6 +756,7 @@ def syntax_analyzer(lexemes):
     parse_program()
     print("Syntax analysis successful!")
     print("Symbol Table: ", symbol_table)
+    return symbol_table
 
    
 def comments_remover(array_lexemes):
