@@ -39,6 +39,9 @@ def syntax_analyzer(lexemes):
             parse_block()
             if index < lexemes_length and array_lexemes[index][0] == "KTHXBYE":
                 consume("KTHXBYE")
+                if index < lexemes_length and array_lexemes[index+1][0]:
+                    print("NOTHING SHOULD BE AFTER KTHXBYE")
+                    exit()
             else:
                 add_error("Expected 'KTHXBYE' to end the program")
                 print("Expected 'KTHXBYE' to end the program")
@@ -70,11 +73,7 @@ def syntax_analyzer(lexemes):
             elif lexeme == "GIMMEH":
                 parse_input()
             elif lexeme_type == ID_VAR:
-                if array_lexemes[index+1][0] == "WTF?":
-                    consume(array_lexemes[index][0] )
-                    parse_switch_case_statement()
-                else:
-                    parse_variable_reassignment()
+                parse_variable_reassignment()
             elif lexeme == "O RLY?":
                 parse_if_else_statements()
             elif lexeme == "WTF?":
@@ -82,7 +81,6 @@ def syntax_analyzer(lexemes):
             elif lexeme == "IM IN YR":
                 parse_loop()
             elif lexeme_type == ID_FUNC:
-                print("hi")
                 parse_function()
             elif lexeme == "I IZ":
                 parse_function_call()
@@ -592,8 +590,7 @@ def syntax_analyzer(lexemes):
 
                 if (condition_type == "WILE" and condition_met) or (condition_type == "TIL" and not condition_met):
                     var_value = get_variable_value(varident)
-                    # parse_block()
-                    parse_expression()
+                    parse_block()
                     if operation == "NERFIN":
                         var_value -= 1
                     else:
@@ -606,7 +603,6 @@ def syntax_analyzer(lexemes):
 
 
             if array_lexemes[index][0] == "IM OUTTA YR":
-                print("hi")
                 consume("IM OUTTA YR")
                 consume(label)
             
