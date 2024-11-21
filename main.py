@@ -44,8 +44,8 @@ def execute_btn(text_editor, disp_lexemes):
         disp_symbolTable.insert("", tk.END, values=(identifier, value))
    
    
-    # for _, value in symbol_table:
-    #     console_box.insert(tk.END, f"{value}\n")
+    for _, value in symbol_table:
+        console_box.insert(tk.END, f"{value}\n")
 
 file_label = tk.Label(root, text="No file selected", bg="pink", fg= "black",font=("Arial", 15))
 file_label.pack(pady=10)  

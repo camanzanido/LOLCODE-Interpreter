@@ -3,6 +3,8 @@ from src.keyword_classifiers import *
 def syntax_analyzer(lexemes):
     # lexemes = [('flag', 'Variable Identifier'), ('ITZ', 'Variable Declaration'), ('WIN', 'TROOF Literal'), ....]
 
+    # if not end_of_code_checker(lexemes):
+    #     exit
     # Filtered lexemes
     array_lexemes = comments_remover(lexemes)
     symbol_table = [["IT", 0]]
@@ -38,6 +40,7 @@ def syntax_analyzer(lexemes):
             consume("HAI")
             parse_block()
             if index < lexemes_length and array_lexemes[index][0] == "KTHXBYE":
+                print("BOSS")
                 consume("KTHXBYE")
                 if index < lexemes_length and array_lexemes[index+1][0]:
                     print("NOTHING SHOULD BE AFTER KTHXBYE")
@@ -181,6 +184,8 @@ def syntax_analyzer(lexemes):
             consume("AN")
         elif lexeme == "OMG":
             consume("OMG")
+        elif lexeme == "KTHXBYE":
+            return
         else:
             print("3")
             add_error("Invalid expression")
@@ -688,6 +693,14 @@ def syntax_analyzer(lexemes):
                 return value
         return 0
     
+    def end_of_code_checker(lexemes):
+        for i in range(lexemes):
+            if lexemes[i][0] == "KTHXBYE":
+                break
+        if i >= len(lexemes):
+            return 0
+        else:
+            return 1
     # Parser
     def parse_value(value):
         # Remove quotes from YARN literals
