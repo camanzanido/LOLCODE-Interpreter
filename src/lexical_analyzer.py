@@ -232,6 +232,10 @@ def lexemes_matcher (line, code):
     elif re.search("^MKAY( )?", line) != None:
         token_list.append("MKAY")
         token_list.append(DELIM_EXPR_END)
+    
+    elif re.search("^IT( )?", line) != None:
+        token_list.append("IT")
+        token_list.append(ID_IT)
 
     # Data Type
     elif re.search(r"^(-)?[0-9]+\.[0-9]+\b", line) != None:
@@ -289,7 +293,10 @@ def lexemes_init(lines, disp_lexemes):
             else:
                 token = lexemes_matcher(line, 1)
             if token != []:
-                lexemes.append((token[0].strip(), token[1].strip()))
+                if (token[1] == LIT_YARN):
+                    lexemes.append((token[0].rstrip().strip('"'), token[1].strip()))
+                else:
+                    lexemes.append((token[0].strip(), token[1].strip()))
                 if token[0] == "BTW":
                     # Everything after 'BTW' is a comment
                     lexemes.append((line.replace(token[0], "", 1).strip(), COMMENT))

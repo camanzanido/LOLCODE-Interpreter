@@ -22,7 +22,7 @@ HAI
     GIMMEH num1
     GIMMEH num2
 
-    I IZ addNuM YR num1 AN YR num2
+    I IZ addNum YR num1 AN YR num2
     VISIBLE IT
 
     GIMMEH name
