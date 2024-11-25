@@ -8,10 +8,14 @@ def syntax_analyzer(lexemes):
 
     # Filtered lexemes
     array_lexemes = comments_remover(lexemes)
-    symbol_table = [["IT", 1]]
+
+    # Initial variables
     index = 0
     it = 0
     lexemes_length = len(array_lexemes)
+    
+    # Arrays
+    symbol_table = [["IT", 1]]
     functions_array = []
     output_array = []
     errors = []
@@ -34,6 +38,7 @@ def syntax_analyzer(lexemes):
             consume("HAI")
             # CODE BLOCK
             parse_block()
+            print( array_lexemes[index][0])
             if index < lexemes_length and array_lexemes[index][0] == "KTHXBYE":
                 # KTHXBYE
                 consume("KTHXBYE")
@@ -42,16 +47,16 @@ def syntax_analyzer(lexemes):
                     exit()
             else:
                 add_error("Expected 'KTHXBYE' to end the program")
-                print("Expected 'KTHXBYE' to end the program")
         else:
             add_error("Expected 'HAI' at the start of the program")
-            print("Expected 'HAI' at the start of the program")
 
     # <block> ::= <output> | <variable_declarations> | <input> | <variable_assignment>
     #            | <conditional_statement> | <switch_statement> | <function_statement>
     #            | <function_call> | <comparison_statement>
     def parse_block():
         nonlocal index
+        
+        # Parse line by line (by its first keyword)
         while index < lexemes_length:
             lexeme = array_lexemes[index][0]
             lexeme_type = array_lexemes[index][1]
@@ -85,6 +90,7 @@ def syntax_analyzer(lexemes):
             # <comparison_statement>
             elif lexeme_type == KW_COMPARISON:
                 parse_comparison_operations()
+            # Delimiter
             elif lexeme == "KTHXBYE":
                 break
             else:
@@ -118,29 +124,14 @@ def syntax_analyzer(lexemes):
             string_to_print = ""
             # Parse the expression until AN is read
             while index < lexemes_length:
-                if array_lexemes[index][1] == ID_VAR:
-                    variable = array_lexemes[index][0]
-                    consume(variable)
-                    string_to_print += str(get_variable_value(variable))
-                if array_lexemes[index][1] == ID_IT:
-                    consume(array_lexemes[index][0])
-                    string_to_print += str(symbol_table[0][1])
-                elif array_lexemes[index][1] != ID_VAR:
-                    string_to_print += str(parse_expression())
-                else:
-                    add_error("Expected an expression after VISIBLE")
-
+                string_to_print += str(parse_expression())
                 if index < lexemes_length and array_lexemes[index][0] == "AN":
-                    print("hello")
                     consume(array_lexemes[index][0])
                     # append the concatenated string
                 else:
                     output_array.append(string_to_print)
                     update_IT(string_to_print)
-                    break
-
-        print("string:", string_to_print)
-    
+                    break    
     
     # ===================================================================== EXPRESSIONS =====================================================================
     # <expression> ::= <arithmetic op> | <smoosh op> | var | literal
@@ -184,8 +175,11 @@ def syntax_analyzer(lexemes):
         elif lexeme_type == KW_OUTPUT:
             parse_output()
         elif lexeme == "I IZ":
-            parse_function_call()
+            value = parse_function_call()
+            update_IT(value)
+            return value
         elif lexeme == "IT":
+            consume(lexeme)
             return symbol_table[0][1]
         elif lexeme == "AN":    
             consume("AN")
@@ -675,11 +669,10 @@ def syntax_analyzer(lexemes):
     def parse_function_return():
         if index < lexemes_length and array_lexemes[index][0] == "FOUND YR":
             consume(array_lexemes[index][0])  
-            parse_expression()  
+            return parse_expression()  
         if index < lexemes_length and array_lexemes[index][0] == "GTFO":
             consume(array_lexemes[index][0])
-            while index < lexemes_length and array_lexemes[index][0] != "IF U SAY SO":
-                parse_expression()
+            return "NOOB"
 
     # <function_call>
     def parse_function_call():
@@ -706,7 +699,7 @@ def syntax_analyzer(lexemes):
                     # YR
                     if index < lexemes_length and array_lexemes[index][0] == "YR":
                         consume(array_lexemes[index][0]) 
-                        if index < lexemes_length and array_lexemes[index][1] == ID_VAR: 
+                        if index < lexemes_length and array_lexemes[index][1]: 
                             # Parameter 1
                             variable = functions_array[func_index][2][func_args_length]
                             symbol_table.append([variable, parse_expression()])
@@ -716,7 +709,7 @@ def syntax_analyzer(lexemes):
                                 consume(array_lexemes[index][0])  
                                 if index < lexemes_length and array_lexemes[index][0] == "YR":
                                     consume(array_lexemes[index][0])
-                                    if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
+                                    if index < lexemes_length and array_lexemes[index][1]:
                                         if func_args_length < func_param_length:
                                             variable = functions_array[func_index][2][func_args_length]
                                             symbol_table.append([variable, parse_expression()])
@@ -731,7 +724,7 @@ def syntax_analyzer(lexemes):
                                     return()
                             
                             if func_param_length == func_args_length:
-                                execute_function(function_index)
+                                return_value = execute_function(function_index)
                             elif func_args_length > func_param_length:
                                 print("Error: More arguments than function parameters")
                                 exit()
@@ -739,10 +732,11 @@ def syntax_analyzer(lexemes):
                                 print("Error: Missing arguments")
                                 exit()
                 else:
-                    print("Error: Function not found or declared")
+                    print(f"Error: Function '{function_name}' not found or declared")
                     exit()
         
         symbol_table[1:] = copy.deepcopy(copy_symbol_table)
+        return return_value
 
     def execute_function(temp_index):
         nonlocal index
@@ -777,8 +771,6 @@ def syntax_analyzer(lexemes):
                 print("Error, function name is missing")
 
         index = init_index
-
-
     # ------------------- HELPER FUNCTIONS -------------------
     # Function for returning symbol table value
     def get_variable_value(var_name):
