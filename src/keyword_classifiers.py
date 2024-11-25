@@ -7,6 +7,7 @@ DELIM_EXPR_END = "End of Expression Delimiter"
 ID_VAR = "Variable Identifier"
 ID_FUNC = "Function Identifier"
 ID_LOOP = "Loop Identifier"
+ID_IT = "IT Identifier"
 
 DECLARATION_VAR = "Variable Declaration"
 ASSIGNMENT_VAR = "Variable Assignment"

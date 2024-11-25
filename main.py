@@ -38,14 +38,15 @@ def execute_btn(text_editor, disp_lexemes):
 
     # Initialize lexemes from the current file content
     lexemes = lexemes_init(text_editor.get("1.0", tk.END).splitlines(), disp_lexemes)
-    symbol_table= syntax_analyzer(lexemes)
+    syntax_analyzer_result = syntax_analyzer(lexemes)
+    symbol_table = syntax_analyzer_result[0]
+    output_array = syntax_analyzer_result[1]
 
     for identifier, value in symbol_table:
         disp_symbolTable.insert("", tk.END, values=(identifier, value))
    
-   
-    for _, value in symbol_table:
-        console_box.insert(tk.END, f"{value}\n")
+    for output in output_array:
+        console_box.insert(tk.END, f"{output}\n")
 
 file_label = tk.Label(root, text="No file selected", bg="pink", fg= "black",font=("Arial", 15))
 file_label.pack(pady=10)  
