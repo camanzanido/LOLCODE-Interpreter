@@ -250,7 +250,7 @@ def lexemes_matcher (line, code):
     
     elif re.search(r'^"(.|:\)|:>|:o|:"|::|")*"( )?', line) != None:
         yarn = re.search(r'^"([^"]|:\)|:>|:o|:"|::)*"( )?', line).group()
-        token_list.append(yarn.strip('"'))
+        token_list.append(yarn)
         token_list.append(LIT_YARN )
     
     elif re.search("^(WIN|FAIL)( )?", line) != None:

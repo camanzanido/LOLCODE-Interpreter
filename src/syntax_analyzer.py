@@ -131,12 +131,15 @@ def syntax_analyzer(lexemes):
                     add_error("Expected an expression after VISIBLE")
 
                 if index < lexemes_length and array_lexemes[index][0] == "AN":
+                    print("hello")
                     consume(array_lexemes[index][0])
                     # append the concatenated string
                 else:
                     output_array.append(string_to_print)
                     update_IT(string_to_print)
                     break
+
+        print("string:", string_to_print)
     
     
     # ===================================================================== EXPRESSIONS =====================================================================
@@ -662,9 +665,6 @@ def syntax_analyzer(lexemes):
         # reset these after parsing the function
         output_array = copy.deepcopy(init_output_array)
         symbol_table = copy.deepcopy(init_symbol_table)
-        print(symbol_table)
-        print(output_array)
-    
 
 
      # <function_body>
@@ -729,7 +729,7 @@ def syntax_analyzer(lexemes):
                                 else:
                                     print("Error: Missing YR after AN")
                                     return()
-                                
+                            
                             if func_param_length == func_args_length:
                                 execute_function(function_index)
                             elif func_args_length > func_param_length:
