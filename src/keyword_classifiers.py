@@ -34,3 +34,6 @@ LIT_NUMBR = "NUMBR Literal"
 LIT_TROOF = "TROOF Literal"
 LIT_YARN = "YARN Literal"
 LIT_NOOB = "NOOB Literal"
+
+SEMANTICS =  True
+SYNTAX = False
