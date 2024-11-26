@@ -283,23 +283,26 @@ def lexemes_init(lines, disp_lexemes):
     # token_dict = {}
     lexemes = []
     OBTW_flag = False
-
+    line_number = 0
     # Per line of the code
     for line in lines:
         line = line.strip()
         while line != "":
+            # If not a comment:
             if not OBTW_flag:
                 token = lexemes_matcher(line, 0)
+            # If a comment:
             else:
                 token = lexemes_matcher(line, 1)
             if token != []:
+                # Trim the quotes of the yarn
                 if (token[1] == LIT_YARN):
-                    lexemes.append((token[0].rstrip().strip('"'), token[1].strip()))
+                    lexemes.append((token[0].rstrip().strip('"'), token[1].strip(), line_number))
                 else:
-                    lexemes.append((token[0].strip(), token[1].strip()))
+                    lexemes.append((token[0].strip(), token[1].strip(), line_number))
                 if token[0] == "BTW":
                     # Everything after 'BTW' is a comment
-                    lexemes.append((line.replace(token[0], "", 1).strip(), COMMENT))
+                    lexemes.append((line.replace(token[0], "", 1).strip(), COMMENT, line_number))
                     line = ""
                 # Raise flag if OBTW is read
                 elif token[0] == "OBTW":
@@ -309,6 +312,7 @@ def lexemes_init(lines, disp_lexemes):
                 line = line.replace(token[0], "", 1).strip()
             else:
                 break   
+        line_number += 1
 
     # for key, value in token_dict.items():
     #     print(f"{key} \t\t {value}")
@@ -319,7 +323,7 @@ def lexemes_init(lines, disp_lexemes):
         disp_lexemes.delete(item)
     
     # Insert each lexeme into the Treeview, even repeated ones
-    for lexeme, classification in lexemes:
+    for lexeme, classification, line_number in lexemes:
         # print(f"{lexeme} \t\t {classification}")
         disp_lexemes.insert("", "end", values=(lexeme, classification))
     return lexemes
