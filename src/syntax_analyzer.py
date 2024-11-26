@@ -10,12 +10,14 @@ array_lexemes = []
 index = 0
 it = 0
 lexemes_length = 0
+status = SYNTAX
 
 # Arrays
 symbol_table = [["IT", 1]]
 functions_array = []
 output_array = []
 errors = []
+
 
 def syntax_analyzer(lexemes):
     global index
@@ -29,7 +31,6 @@ def syntax_analyzer(lexemes):
     # Start parsing the program
     parse_program()
     print("========== Syntax analysis successful! ==========")
-    print("Functions array: ", functions_array)
     display_symbol_table(symbol_table)
     display_output(output_array)
     return symbol_table, output_array
@@ -81,7 +82,8 @@ def parse_block():
     global symbol_table
     global output_array
     global lexemes_length
-    
+    global status
+
     # Parse line by line (by its first keyword)
     while index < lexemes_length:
         lexeme = array_lexemes[index][0]
@@ -94,7 +96,9 @@ def parse_block():
             parse_variable_declarations()
         # <input>    
         elif lexeme == "GIMMEH":
+            status = SEMANTICS
             parse_input()
+            status = SYNTAX
         # <variable_assignment>
         elif lexeme_type == ID_VAR:
             parse_variable_reassignment()
@@ -114,7 +118,8 @@ def parse_block():
             parse_function_call()
         # <comparison_statement>
         elif lexeme_type == KW_COMPARISON:
-            parse_comparison_operations()
+            value = parse_comparison_operations()
+            update_IT(value)
         # Delimiter
         elif lexeme == "KTHXBYE":
             break
@@ -132,6 +137,8 @@ def parse_input():
     global symbol_table
     global output_array
     global lexemes_length
+    global status
+
     lexeme = array_lexemes[index][0]
     # GIMMEH
     if lexeme == "GIMMEH":
@@ -140,14 +147,13 @@ def parse_input():
         if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
             variable = array_lexemes[index][0]
             consume(array_lexemes[index][0])
-            
-            # Ask for an input in the terminal
-            value = input(f"{variable}: ")
-            parsed_value = parse_value(value)
-            update_IT(parsed_value)
-            
-            # Update the symbol table
-            update_variable_value(variable, parsed_value)
+            if status == SEMANTICS:
+                # Ask for an input in the terminal
+                value = input(f"{variable}: ")
+                parsed_value = parse_value(value)
+                update_IT(parsed_value)
+                # Update the symbol table
+                update_variable_value(variable, parsed_value)
         else:
             add_error("Expected 'GIMMEH' to read input")
 
@@ -296,13 +302,12 @@ def operand():
     global lexemes_length
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
-
     # Return the literal value or variable value
     if lexeme_type == ID_VAR:
         consume(lexeme)
         # Retrieve the variable's value from the symbol table
         value = get_variable_value(lexeme)
-        return value
+        return parse_value(value)
 
     # Perform typecasting
     elif lexeme_type == LIT_NUMBR:
@@ -320,9 +325,12 @@ def operand():
             return 1
         else:
             return 0
-    
     # YARN
     elif lexeme_type == LIT_YARN:
+        consume(lexeme)
+        return parse_value(lexeme)
+    
+    elif lexeme == "NOOB":
         consume(lexeme)
         return parse_value(lexeme)
     
@@ -470,6 +478,7 @@ def parse_variable_declaration():
                 symbol_table.append([variable, "NOOB"])
         else:
             print(f"Error: Unexpected token '{array_lexemes[index][0]}' found while parsing variable declaration.")
+
 # ===================================================================== BOOLEAN OPERATIONS =====================================================================
 # <boolean_op> :: = BOTH OF <expr> AN <expr> | EITHER OF <expr> AN <expr> | WON OF <expr> AN <expr> | NOT <expr> | ALL OF <expr> MKAY | ANY OF <expr> MKAY
 def parse_boolean_operations():
@@ -579,11 +588,20 @@ def parse_if_else_statements():  # Note: NO MEBBE YET
     global symbol_table
     global output_array
     global lexemes_length
+    global status
+    global output_array
+    global symbol_table
+    
+    # store initial values
+    init_output_array = copy.deepcopy(output_array)
+    init_symbol_table = copy.deepcopy(symbol_table)
 
     lexeme = array_lexemes[index][0]
     # condition = []          
     # condition.append(it) 
     if lexeme == "O RLY?":
+        no_wai_line_number = -1
+        init_index = index
         consume(lexeme)
         # cond = condition[0]
         # while index < lexemes_length and array_lexemes[index][0] != "OIC" or index < lexemes_length and array_lexemes[index][0] != "NO WAI" :
@@ -593,6 +611,7 @@ def parse_if_else_statements():  # Note: NO MEBBE YET
                 parse_expression()
         
         if array_lexemes[index][0] == "NO WAI":
+            no_wai_line_number = array_lexemes[index][2]
             consume("NO WAI")
             while (index < lexemes_length and array_lexemes[index][0] != "OIC"):
                 parse_expression()
@@ -601,7 +620,17 @@ def parse_if_else_statements():  # Note: NO MEBBE YET
         if array_lexemes[index][0] == "OIC":
             consume("OIC")
 
-    # <switch-case> ::= WTF? <linebreak> <case>+ <linebreak> <default_case>?  OIC
+        # reset these after parsing the function
+        output_array = copy.deepcopy(init_output_array)
+        symbol_table = copy.deepcopy(init_symbol_table)
+
+        last_index = index
+        status = SEMANTICS
+        sem_execute_if_else_statement(init_index, no_wai_line_number)
+        status = SYNTAX
+        index = last_index
+
+# <switch-case> ::= WTF? <linebreak> <case>+ <linebreak> <default_case>?  OIC
 def parse_switch_case_statement():
     global index
     global array_lexemes
@@ -863,6 +892,7 @@ def parse_function_call():
     global symbol_table
     global output_array
     global lexemes_length
+    global status
     lexeme = array_lexemes[index][0]
     return_value = "NOOB"
     
@@ -912,7 +942,9 @@ def parse_function_call():
                         
                         # Execute function if equal number of parameters and arguments
                         if func_param_length == func_args_length:
-                            return_value = execute_function(function_index)
+                            status = SEMANTICS
+                            return_value = sem_execute_function(function_index)
+                            status = SYNTAX
                         elif func_args_length > func_param_length:
                             print("Error: More arguments than function parameters")
                             exit()
@@ -927,8 +959,10 @@ def parse_function_call():
     symbol_table[1:] = copy.deepcopy(copy_symbol_table)
     return return_value
 
+# ======================================================== SEMANTICS ANALYSIS FUNCTIONS ======================================================== 
+
 # Call and execute the function
-def execute_function(temp_index):
+def sem_execute_function(temp_index):
     global index
     global array_lexemes
     global symbol_table
@@ -968,7 +1002,39 @@ def execute_function(temp_index):
 
     # Jump back
     index = init_index
-    
+
+# Execute if-else statement
+def sem_execute_if_else_statement(temp_index, no_wai_line_number):
+    global index
+    global array_lexemes
+    global symbol_table
+    global output_array
+    global lexemes_length
+    # Index of the O RLY?
+    index = temp_index
+
+    if array_lexemes[index][0] == "O RLY?":
+        # Extracts the line number
+        line_number = array_lexemes[index][2]
+        # Find the index of the expression (linenumber-1)
+        index = find_expression(line_number-1)
+        # Parse that expression
+        troof_result = parse_expression()
+        # If true: Perform YA RLY
+        if troof_result:
+            while array_lexemes[index][0] != "YA RLY":
+                index +=1
+            consume("YA RLY")
+            while array_lexemes[index][0] not in ["NO WAI", "OIC"]:
+                parse_expression()
+        # If false: Perform NO WAI if existing
+        else:
+            if no_wai_line_number != -1:
+                index = find_expression(no_wai_line_number)
+                consume(array_lexemes[index][0])
+                while array_lexemes[index][0] != "OIC":
+                    parse_expression()
+        
 # ------------------- HELPER FUNCTIONS -------------------
 # Function for returning symbol table value
 def get_variable_value(var_name):
@@ -989,9 +1055,8 @@ def end_of_code_checker(lexemes):
         return 1
 # Parser
 def parse_value(value):
-    # Remove quotes from YARN literals
-    if value.startswith('"') and value.endswith('"'):
-        value = value[1:-1]
+    if value == "NOOB":
+        return 0
     try:
         return int(value) 
     except ValueError:
@@ -1000,6 +1065,12 @@ def parse_value(value):
         return float(value)  
     except ValueError:
         pass  
+    try:
+        # Remove quotes from YARN literals
+        if value.startswith('"') and value.endswith('"'):
+            value = value[1:-1]
+    except ValueError:
+        pass      
     return value
 
 # Function for updating the symbol table
@@ -1079,7 +1150,16 @@ def find_function_index(function_name):
         if functions_array[i][0] == function_name:
             return i
     return -1  
-    
+
+# Function for finding the expression before an if-else
+def find_expression(line_number):
+    global array_lexemes
+
+    for i in range(len(array_lexemes)):
+        if array_lexemes[i][2] == line_number:
+            return i
+    return -1  
+
 def comments_remover(array_lexemes):
     filtered_lexemes = []
 
