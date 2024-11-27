@@ -169,12 +169,12 @@ def lexemes_matcher (line, code):
         token_list.append("WTF?")
         token_list.append(KW_CONDITION )
 
-    elif re.search("^OMG( )?", line) != None:
-        token_list.append("OMG")
-        token_list.append(KW_CONDITION )
-
     elif re.search("^OMGWTF( )?", line) != None:
         token_list.append("OMGWTF")
+        token_list.append(KW_CONDITION )
+
+    elif re.search("^OMG( )?", line) != None:
+        token_list.append("OMG")
         token_list.append(KW_CONDITION )
 
     # Loop

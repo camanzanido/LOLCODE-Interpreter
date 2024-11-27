@@ -400,6 +400,8 @@ def parse_variable_reassignment():
         # Perform Type casting 
         elif index < lexemes_length and array_lexemes[index][0] == "IS NOW A":
             parse_type_casting(variable)
+        elif index < lexemes_length and array_lexemes[index][0] in ["WTF?", "O RLY?"]:
+            return
         else:
             print("Error: Invalid variable reassignment syntax.")
 
@@ -637,11 +639,14 @@ def parse_switch_case_statement():
     global symbol_table
     global output_array
     global lexemes_length
+    global status
 
+            
+        # store initial values
+    init_output_array = copy.deepcopy(output_array)
+    init_symbol_table = copy.deepcopy(symbol_table)
     lexeme = array_lexemes[index][0]
-    condition = it
-    matched = False
-
+    semantic_indx  = index
     if lexeme == "WTF?":
         consume(lexeme)
         while index < lexemes_length: 
@@ -659,7 +664,7 @@ def parse_switch_case_statement():
                 if index < lexemes_length and array_lexemes[index][1] in [LIT_YARN, LIT_NUMBR, LIT_NUMBAR, LIT_TROOF, ID_VAR]:
                     consume(array_lexemes[index][0])
                     # Expressions
-                    while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG"]):
+                    while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG", "OMGWTF"]):
                         parse_expression() 
                     # GTFO
                     if index < lexemes_length and array_lexemes[index][0] == "GTFO":
@@ -693,10 +698,81 @@ def parse_switch_case_statement():
                     parse_expression()
                 if index < lexemes_length and array_lexemes[index][0] == "GTFO":
                     consume("GTFO")
+                
 
             else:
                 print(f"Unexpected token {curr_lexeme} in WTF? statement.")
                 break
+
+        output_array = copy.deepcopy(init_output_array)
+        symbol_table = copy.deepcopy(init_symbol_table)
+        status = SEMANTICS
+        execute_switch(semantic_indx)
+        status = SYNTAX
+
+def execute_switch(semantic_index):
+    global index
+    global array_lexemes
+    global symbol_table
+    global output_array
+    global it 
+
+    condition = it
+    matched = False
+
+    index_backup = index  
+    index = semantic_index
+
+    if isinstance(array_lexemes[index-1][0], str):  # check if the lexeme is a string(variable),
+        condition = get_variable_value(array_lexemes[index-1][0]) # get its value
+
+    consume("WTF?")  
+    while index < lexemes_length : 
+        curr_lexeme = array_lexemes[index][0]
+        print(f"current lexeme: {curr_lexeme}")
+        if curr_lexeme == "OIC":
+            consume("OIC")
+            break
+
+        elif curr_lexeme == "OMG":
+            consume("OMG")
+            
+            if index < lexemes_length and array_lexemes[index][1] in [LIT_YARN, LIT_NUMBR, LIT_NUMBAR, LIT_TROOF, ID_VAR]:
+                case_value = array_lexemes[index][0]
+                if condition == int(case_value) and not matched:      
+                    print("matched")
+                    matched = True
+                    consume(case_value)
+                    print(case_value)
+                    
+                    # execute the block
+                    while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG", "OMGWTF"]):
+                        parse_expression() 
+                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+                        consume("GTFO")
+                    break
+                else:
+                    consume(case_value)
+                    while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG", "OMGWTF"]):
+                        index += 1
+                    
+                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+                        consume("GTFO")
+
+        elif curr_lexeme == "OMGWTF": # default case
+            if not matched:
+                consume("OMGWTF")
+                while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
+                    parse_expression()
+                
+                if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+                    consume("GTFO")
+                break
+
+    # Restore the index
+    index = index_backup
+
+    
 
 # <loop> ::= IM IN YR <label> operation YR varident (<til_op> | <wile_op>) <linebreak> <code_block><linebreak> IM OUTTA YR <label>
 def parse_loop():
@@ -705,6 +781,7 @@ def parse_loop():
     global symbol_table
     global output_array
     global lexemes_length
+
     lexeme = array_lexemes[index][0]
     
     if lexeme == "IM IN YR":
@@ -751,6 +828,7 @@ def parse_loop():
         if array_lexemes[index][0] == "IM OUTTA YR":
             consume("IM OUTTA YR")
             consume(label)
+
         
 # ===================================================================== FUNCTIONS =====================================================================
 # <function> ::= HOW IZ I func_ident <parameters> <function_body> <return_statement> IF U SAY SO
