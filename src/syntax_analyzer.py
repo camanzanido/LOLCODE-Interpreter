@@ -641,7 +641,10 @@ def parse_switch_case_statement():
     global lexemes_length
     global status
 
-    
+            
+        # store initial values
+    init_output_array = copy.deepcopy(output_array)
+    init_symbol_table = copy.deepcopy(symbol_table)
     lexeme = array_lexemes[index][0]
     semantic_indx  = index
     if lexeme == "WTF?":
@@ -701,32 +704,34 @@ def parse_switch_case_statement():
                 print(f"Unexpected token {curr_lexeme} in WTF? statement.")
                 break
 
+        output_array = copy.deepcopy(init_output_array)
+        symbol_table = copy.deepcopy(init_symbol_table)
         status = SEMANTICS
         execute_switch(semantic_indx)
         status = SYNTAX
+
 def execute_switch(semantic_index):
     global index
     global array_lexemes
     global symbol_table
     global output_array
-    global it  # Assuming 'it' is the global variable holding the switch condition
+    global it 
 
     condition = it
     matched = False
 
-    index_backup = index  # Store the current index
+    index_backup = index  
     index = semantic_index
 
-    # Check if the lexeme is a string
-    if isinstance(array_lexemes[index-1][0], str):
-        print("get val")
-        condition = get_variable_value(array_lexemes[index-1][0])
-        print(condition)
-    consume("WTF?")
-    while index < lexemes_length: 
+    if isinstance(array_lexemes[index-1][0], str):  # check if the lexeme is a string(variable),
+        condition = get_variable_value(array_lexemes[index-1][0]) # get its value
+
+    consume("WTF?")  
+    while index < lexemes_length : 
         curr_lexeme = array_lexemes[index][0]
-    
+        print(f"current lexeme: {curr_lexeme}")
         if curr_lexeme == "OIC":
+            consume("OIC")
             break
 
         elif curr_lexeme == "OMG":
@@ -742,9 +747,7 @@ def execute_switch(semantic_index):
                     
                     # execute the block
                     while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG", "OMGWTF"]):
-
-                        parse_expression()
-                    
+                        parse_expression() 
                     if index < lexemes_length and array_lexemes[index][0] == "GTFO":
                         consume("GTFO")
                     break
