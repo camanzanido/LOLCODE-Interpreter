@@ -10,16 +10,14 @@ from tkinter import filedialog,ttk
 
 root = tk.Tk()
 root.configure(bg="pink")
-root.resizable(0,0)
-
+root.geometry("1500x1000")
 root.title('GROUP 5 | LOLCODE INTERPRETER')
 
 
 def get_file(file_label, text_editor):
-
-    filename = ''
-
-    filename = filedialog.askopenfilename( initialdir="/project-cases", title= "Select File", filetypes=( ("LOL files", "*.lol"), ("all files", "*.*") ))
+    global array_lexemes, symbol_table, output_array
+    
+    filename = filedialog.askopenfilename(initialdir="/project-cases", title="Select File", filetypes=(("LOL files", "*.lol"), ("all files", "*.*")))
 
     if filename:
         file_label.config(text="File opened: " + filename)
@@ -28,15 +26,29 @@ def get_file(file_label, text_editor):
             text_editor.delete(1.0, tk.END)  
             text_editor.insert(tk.END, file_text)  
 
-def execute_btn(text_editor, disp_lexemes):
-        # Clear previous lexeme entries
+        # Clear and reinitialize global states
+        array_lexemes = []  
+        symbol_table = []   
+        output_array = []   
+
+
+
+
+def execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box):
+    # Clear previous entries in lexemes and symbol table
     for item in disp_lexemes.get_children():
         disp_lexemes.delete(item)
+
     for item in disp_symbolTable.get_children():
         disp_symbolTable.delete(item)
-    console_box.delete(1.0, tk.END)
 
-    # Initialize lexemes from the current file content
+    
+    # Clear the console box
+    console_box.config(state=tk.NORMAL)
+    console_box.delete(1.0, tk.END)
+    console_box.config(state=tk.DISABLED)
+
+    # Initialize lexemes and process the syntax
     lexemes = lexemes_init(text_editor.get("1.0", tk.END).splitlines(), disp_lexemes)
     syntax_analyzer_result = syntax_analyzer(lexemes)
     symbol_table = syntax_analyzer_result[0]
@@ -45,8 +57,11 @@ def execute_btn(text_editor, disp_lexemes):
     for identifier, value in symbol_table:
         disp_symbolTable.insert("", tk.END, values=(identifier, value))
    
+    console_box.config(state=tk.NORMAL)
     for output in output_array:
         console_box.insert(tk.END, f"{output}\n")
+    console_box.config(state=tk.DISABLED)
+
 
 file_label = tk.Label(root, text="No file selected", bg="pink", fg= "black",font=("Arial", 15))
 file_label.pack(pady=10)  
@@ -60,7 +75,7 @@ text_editor_frame.pack(side="left", fill="both", expand=True, padx=10)
 text_editor_title = tk.Label(text_editor_frame, text="Source Code", font=("Arial", 12, "bold"))
 text_editor_title.pack(side="top", pady=5)  
 
-text_editor = tk.Text(text_editor_frame, wrap='word', height=20, width=40) 
+text_editor = tk.Text(text_editor_frame, wrap='word', height=20, width=50) 
 text_editor.pack(side="top", fill="both", expand=True)
 
 
@@ -93,7 +108,7 @@ button_frame.pack(side="bottom", pady=10)
 open_button = tk.Button(button_frame, text="Open File", command=lambda: get_file(file_label, text_editor), bg="#FFD9EC", relief="ridge")
 open_button.pack(side="left", padx=5)
 
-execute_button = tk.Button(button_frame, text="Execute", command=lambda: execute_btn(text_editor, disp_lexemes), bg="#FFD9EC", relief="ridge")
+execute_button = tk.Button(button_frame, text="Execute", command=lambda: execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box), bg="#FFD9EC", relief="ridge")
 execute_button.pack(side="left", padx=5)
 
 console_frame = tk.Frame(root, bg="pink")
