@@ -15,7 +15,6 @@ root.title('GROUP 5 | LOLCODE INTERPRETER')
 
 
 def get_file(file_label, text_editor):
-    global array_lexemes, symbol_table, output_array
     
     filename = filedialog.askopenfilename(initialdir="/project-cases", title="Select File", filetypes=(("LOL files", "*.lol"), ("all files", "*.*")))
 
@@ -25,13 +24,6 @@ def get_file(file_label, text_editor):
             file_text = file.read()
             text_editor.delete(1.0, tk.END)  
             text_editor.insert(tk.END, file_text)  
-
-        # Clear and reinitialize global states
-        array_lexemes = []  
-        symbol_table = []   
-        output_array = []   
-
-
 
 
 def execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box):
