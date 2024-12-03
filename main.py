@@ -4,9 +4,8 @@ from src.keyword_classifiers import *
 from src.lexical_analyzer import *
 from src.syntax_analyzer import *
 import tkinter as tk 
-from tkinter import filedialog,ttk
+from tkinter import filedialog,ttk, simpledialog
 
-# need catch deci
 
 root = tk.Tk()
 root.configure(bg="pink")
@@ -45,6 +44,7 @@ def execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box):
     syntax_analyzer_result = syntax_analyzer(lexemes)
     symbol_table = syntax_analyzer_result[0]
     output_array = syntax_analyzer_result[1]
+    
 
     for identifier, value in symbol_table:
         disp_symbolTable.insert("", tk.END, values=(identifier, value))
@@ -53,6 +53,7 @@ def execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box):
     for output in output_array:
         console_box.insert(tk.END, f"{output}\n")
     console_box.config(state=tk.DISABLED)
+
 
 
 file_label = tk.Label(root, text="No file selected", bg="pink", fg= "black",font=("Arial", 15))

@@ -1,5 +1,8 @@
+
+from input_gui import ask_input
 from src.keyword_classifiers import *
 import copy
+
 
 # lexemes = [('flag', 'Variable Identifier'), ('ITZ', 'Variable Declaration'), ('WIN', 'TROOF Literal'), ....]
 
@@ -140,6 +143,10 @@ def parse_block():
             break
         
 # ===================================================================== INPUT/OUTPUT =====================================================================
+def display_visible_text(display_widget, text):
+    display_widget.config(state=tk.NORMAL)  # Allow modifications to the widget
+    display_widget.insert(tk.END, f"{text}\n")  # Append the visible text
+    display_widget.config(state=tk.DISABLED)  # Disable the widget to prevent editing
 
 
 # <input> ::= GIMMEH <var_ident> 
@@ -152,6 +159,15 @@ def parse_input():
     global status
 
     lexeme = array_lexemes[index][0]
+
+    ## try to print visible in  the input gui 
+    # while lexeme == "VISIBLE":
+    #     display_text = array_lexemes[index][1]  # get visble
+    #     print(display_text)
+    #     consume(lexeme)
+    #     if index < lexemes_length:
+    #         lexeme = array_lexemes[index][0]
+
     # GIMMEH
     if lexeme == "GIMMEH":
         consume(lexeme)
@@ -160,12 +176,21 @@ def parse_input():
             variable = array_lexemes[index][0]
             consume(array_lexemes[index][0])
             if status == SEMANTICS:
-                # Ask for an input in the terminal
-                value = input(f"{variable}: ")
-                parsed_value = parse_value(value)
-                update_IT(parsed_value)
-                # Update the symbol table
-                update_variable_value(variable, parsed_value)
+                # # Ask for an input in the terminal
+                # value = input(f"{variable}: ")
+                # parsed_value = parse_value(value)
+                # update_IT(parsed_value)
+                # # Update the symbol table
+                # update_variable_value(variable, parsed_value)
+                # # parse_input_with_window(variable)
+                user_input = ask_input(variable)
+                if user_input is not None:
+                    parsed_value = parse_value(user_input)
+                    update_variable_value(variable, parsed_value)
+                    update_IT(parsed_value)
+                else:
+                    add_error("Input was cancelled or invalid.")
+
         else:
             add_error("Expected 'GIMMEH' to read input")
 
@@ -400,7 +425,7 @@ def parse_variable_reassignment():
         variable = lexeme
         # var_ident
         consume(lexeme)
-        # R
+        
         if index < lexemes_length and array_lexemes[index][1] == ASSIGNMENT_VAR:
             consume(array_lexemes[index][0])
             # Perform Type casting 
@@ -414,6 +439,7 @@ def parse_variable_reassignment():
             parse_type_casting(variable)
         else:
             print("Error: Invalid variable reassignment syntax.")
+            
 
 # <typecasting> ::= MAEK var_ident literal | IS NOW A literal
 def parse_type_casting(variable):
