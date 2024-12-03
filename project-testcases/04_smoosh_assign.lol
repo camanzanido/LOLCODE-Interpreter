@@ -24,6 +24,6 @@ HAI
     VISIBLE 10 AN y
 
     y R 0
-    y R MAEK y TROOF
+    y R MAEK y A TROOF
     VISIBLE y
 KTHXBYE
