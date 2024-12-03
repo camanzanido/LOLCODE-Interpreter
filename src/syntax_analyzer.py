@@ -28,6 +28,7 @@ def syntax_analyzer(lexemes):
     global symbol_table
     global output_array
     global lexemes_length
+    global errors
 
     # Reset the variables
     array_lexemes = []
@@ -35,7 +36,7 @@ def syntax_analyzer(lexemes):
     it = 0
     lexemes_length = 0
     status = SYNTAX
-    symbol_table = [["IT", 1]]
+    symbol_table = [["IT", "NONE"]]
     functions_array = []
     output_array = []
     errors = []
@@ -45,10 +46,11 @@ def syntax_analyzer(lexemes):
     lexemes_length = len(array_lexemes)
     # Start parsing the program
     parse_program()
-    print("========== Syntax analysis successful! ==========")
+    print("========== Syntax analysis done! ==========")
     display_symbol_table(symbol_table)
     display_output(output_array)
-    return symbol_table, output_array
+    display_errors(errors)
+    return symbol_table, output_array, errors
 
 # Consume function: Proceeds to the next token
 def consume(expected_token):
@@ -62,9 +64,8 @@ def consume(expected_token):
         # Increment index/position: Next token
         index += 1
     else:
-        add_error(f"Expected '{expected_token}', but got '{array_lexemes[index][0]}'")
-        print(f"Expected '{expected_token}', but got '{array_lexemes[index][0]}'")
-
+        add_error(array_lexemes[index][2], f"Expected '{expected_token}', but got '{array_lexemes[index][0]}' instead")
+      
 # <program> ::= HAI <block> KTHXBYE
 def parse_program():
     global index
@@ -72,21 +73,25 @@ def parse_program():
     global symbol_table
     global output_array
     global lexemes_length
+    global errors
     # HAI
     if index < lexemes_length and array_lexemes[index][0] == "HAI":
         consume("HAI")
         # CODE BLOCK
         parse_block()
-        if index < lexemes_length and array_lexemes[index][0] == "KTHXBYE":
-            # KTHXBYE
-            consume("KTHXBYE")
-            if index < lexemes_length and array_lexemes[index+1][0]:
-                print("NOTHING SHOULD BE AFTER KTHXBYE")
-                exit()
+        if not errors:
+            if index < lexemes_length and array_lexemes[index][0] == "KTHXBYE":
+                # KTHXBYE
+                consume("KTHXBYE")
+                if index < lexemes_length and array_lexemes[index+1][0]:
+                    print((array_lexemes[index][2]) + 1, "NOTHING SHOULD BE AFTER KTHXBYE")
+                    exit()
+            else:
+                add_error(array_lexemes[index][2], "Expected 'KTHXBYE' to end the program")
         else:
-            add_error("Expected 'KTHXBYE' to end the program")
+            return()
     else:
-        add_error("Expected 'HAI' at the start of the program")
+        add_error(array_lexemes[index][2], "Expected 'HAI' at the start of the program")
 
 # <block> ::= <output> | <variable_declarations> | <input> | <variable_assignment>
 #            | <conditional_statement> | <switch_statement> | <function_statement>
@@ -98,9 +103,10 @@ def parse_block():
     global output_array
     global lexemes_length
     global status
+    global errors
 
     # Parse line by line (by its first keyword)
-    while index < lexemes_length:
+    while index < lexemes_length and len(errors) == 0:
         lexeme = array_lexemes[index][0]
         lexeme_type = array_lexemes[index][1]
         # <output>
@@ -139,8 +145,9 @@ def parse_block():
         elif lexeme == "KTHXBYE":
             break
         else:
-            add_error(f"Unexpected token '{lexeme}'")
+            add_error(array_lexemes[index][2], f"Unexpected token '{lexeme}'")
             break
+    
         
 # ===================================================================== INPUT/OUTPUT =====================================================================
 
@@ -165,6 +172,7 @@ def parse_input():
 
     # GIMMEH
     if lexeme == "GIMMEH":
+        this_line = array_lexemes[index][2]
         consume(lexeme)
         # Variable Identifier
         if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
@@ -184,10 +192,9 @@ def parse_input():
                     update_variable_value(variable, parsed_value)
                     update_IT(parsed_value)
                 else:
-                    add_error("Input was cancelled or invalid.")
-
+                    add_error(this_line, "Input was cancelled or invalid.")
         else:
-            add_error("Expected 'GIMMEH' to read input")
+            add_error(this_line, "Expected 'GIMMEH' to read input or variable")
 
 # <output> ::= VISIBLE <expression> [AN <expression>...]
 def parse_output():
@@ -199,12 +206,14 @@ def parse_output():
     lexeme = array_lexemes[index][0]
     # VISIBLE
     if lexeme == "VISIBLE":
+        this_line = index
         consume(lexeme)
         string_to_print = ""
-        
+        executed = False
         # Parse the expression until there is AN
-        while index < lexemes_length:
+        while index < lexemes_length and array_lexemes[index][2] == array_lexemes[this_line][2]:
             string_to_print += str(parse_expression())
+            executed = True
             # AN
             if index < lexemes_length and array_lexemes[index][0] == "AN":
                 consume(array_lexemes[index][0])
@@ -212,7 +221,10 @@ def parse_output():
                 # Append the string to the output array
                 output_array.append(string_to_print)
                 update_IT(string_to_print)
-                break    
+                break
+        if not executed:
+            add_error(array_lexemes[index][2], "Expected expression after VISIBLE.")
+        
 
 # ===================================================================== EXPRESSIONS =====================================================================
 # <expression> ::= <variable> | <literals> | <arithmetic_op> | <input> | <output> | <smoosh> | <boolean_op>
@@ -225,7 +237,7 @@ def parse_expression():
     global lexemes_length
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
-    
+    this_line = array_lexemes[index][2]
     # <variable> | <literals>
     if lexeme_type in [LIT_YARN, LIT_NUMBR, LIT_NUMBAR, LIT_TROOF, ID_VAR]:
         consume(lexeme)
@@ -282,7 +294,7 @@ def parse_expression():
     elif lexeme == "KTHXBYE":
         return
     else:
-        add_error("Invalid expression")
+        add_error(this_line, "Invalid expression")
 
 # ===================================================================== ARITHMETHIC OPERATIONS =====================================================================
 # <arithmethic> ::= <operations> <literal|var_indent|arithmethic> AN <literal|var_indent|arithmethic>
@@ -297,6 +309,7 @@ def parse_arithmethic_operations():
     
     # Operation
     if lexeme_type == KW_ARITHMETIC:
+        this_line = array_lexemes[index][2]
         operator = lexeme
         consume(lexeme)
         # Operand 1
@@ -306,24 +319,29 @@ def parse_arithmethic_operations():
             consume("AN")
             # Operand 2
             operand2 = operand()
-            
-        # Evaluate 
-        if operator == "SUM OF":
-            return operand1 + operand2
-        elif operator == "DIFF OF":
-            return operand1 - operand2
-        elif operator == "PRODUKT OF":
-            return operand1 * operand2
-        elif operator == "QUOSHUNT OF":
-            return operand1 / operand2
-        elif operator == "MOD OF":
-            return operand1 % operand2
-        elif operator == "BIGGR OF":
-            return max(operand1, operand2)
-        elif operator == "SMALLR OF":
-            return min(operand1, operand2)
-        else:
-            add_error("Unsupported operation")
+        
+        try:
+            # Evaluate 
+            if operator == "SUM OF":
+                return operand1 + operand2
+            elif operator == "DIFF OF":
+                return operand1 - operand2
+            elif operator == "PRODUKT OF":
+                return operand1 * operand2
+            elif operator == "QUOSHUNT OF":
+                return operand1 / operand2
+            elif operator == "MOD OF":
+                return operand1 % operand2
+            elif operator == "BIGGR OF":
+                return max(operand1, operand2)
+            elif operator == "SMALLR OF":
+                return min(operand1, operand2)
+            else:
+                add_error(this_line, "Unsupported operation")
+        except TypeError:
+            add_error(this_line, "Invalid operand type")
+        except Exception as e:
+            add_error(this_line, f"Unexpected error: {e}")
 
 # <literal|var_indent|arithmethic>
 def operand():
@@ -334,6 +352,8 @@ def operand():
     global lexemes_length
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
+    this_line = array_lexemes[index][2]
+
     # Return the literal value or variable value
     if lexeme_type == ID_VAR:
         consume(lexeme)
@@ -374,8 +394,9 @@ def operand():
     elif lexeme_type == KW_COMPARISON:
         return parse_comparison_operations()
     else:
-        print(f"Invalid operand type: {lexeme_type}")
-        exit()
+        add_error(this_line, f"Invalid operand type: {lexeme_type} ({lexeme})")
+        return 0
+        
 
 # ===================================================================== SMOOSH KEYWORD =====================================================================
 # <concatenate> ::= SMOOSH <expr> AN [<expr> | (<expr> AN)*]
@@ -388,18 +409,25 @@ def parse_concatenation():
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
     concat_string = ""
+    executed = False
     # SMOOSH keyword
     if lexeme_type == KW_CONCATENATE:
+        this_line = array_lexemes[index][2]
         consume(lexeme)
-        while index < lexemes_length:
+        while index < lexemes_length and array_lexemes[index][2] == this_line:
             # expressions
             # concatenate the result of the expressions
             concat_string += str(parse_expression())
+            executed = True
             # AN
             if index < lexemes_length and array_lexemes[index][0] == "AN":
                 consume("AN")
             else:
                 break
+        
+        if not executed:
+            add_error(this_line, "SMOOSH expecting an expression")
+
         # MKAY delimiter
         if index < lexemes_length and array_lexemes[index][1] == DELIM_EXPR_END:
             consume(array_lexemes[index][0])
@@ -416,7 +444,8 @@ def parse_variable_reassignment():
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
 
-    if lexeme_type == ID_VAR:
+    if lexeme_type == ID_VAR and array_lexemes[index+1][0] != "WTF?":
+        this_line = array_lexemes[index][2]
         variable = lexeme
         # var_ident
         consume(lexeme)
@@ -433,9 +462,10 @@ def parse_variable_reassignment():
         elif index < lexemes_length and array_lexemes[index][0] == "IS NOW A":
             parse_type_casting(variable)
         else:
-            print("Error: Invalid variable reassignment syntax.")
+            add_error(this_line, "Error: Invalid variable reassignment syntax.")
+    else:
+        consume(lexeme)
             
-
 # <typecasting> ::= MAEK var_ident literal | IS NOW A literal
 def parse_type_casting(variable):
     global index
@@ -447,18 +477,27 @@ def parse_type_casting(variable):
     lexeme_type = array_lexemes[index][1]
     # <type_casting> ::= MAEK var_ident <literal> 
     if lexeme == "MAEK":
+        this_line = array_lexemes[index][2]
         consume(lexeme)
         # var_ident
         if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
             variable = array_lexemes[index][0]
             consume(variable)
-            # Literal
-            if index < lexemes_length and array_lexemes[index][1] == LIT:
-                lexeme = array_lexemes[index][0]
+            if index < lexemes_length and array_lexemes[index][0] == "A":
                 consume(array_lexemes[index][0])
-                # Update the symbol table given the new recasted value
-                new_type_value = recast_variable_value(variable, lexeme)
-                update_variable_value(variable, new_type_value)
+                # Literal
+                if index < lexemes_length and array_lexemes[index][1] == LIT:
+                    lexeme = array_lexemes[index][0]
+                    consume(array_lexemes[index][0])
+                    # Update the symbol table given the new recasted value
+                    new_type_value = recast_variable_value(variable, lexeme)
+                    update_variable_value(variable, new_type_value)
+                else:
+                    add_error(this_line, "Expecting a LITERAL.")
+            else:
+                add_error(this_line, "Expecting 'A' after variable.")
+        else:
+            add_error(this_line, "Expecting variable after MAEK.")
         # <type_casting> ::= IS NOW A <literal> 
     elif lexeme == "IS NOW A":
         consume(lexeme)
@@ -468,6 +507,8 @@ def parse_type_casting(variable):
                 # Update the symbol table given the new recasted value
             new_type_value = recast_variable_value(variable, lexeme)
             update_variable_value(variable, new_type_value)
+        else:
+            add_error(this_line, "Expecting a LITERAL.")
 
 # ===================================================================== VARIABLE DECLARATIONS =====================================================================
 # <variable_declarations> ::= WAZZUP <variable_declaration> BUHBYE
@@ -479,12 +520,16 @@ def parse_variable_declarations():
     global lexemes_length
     lexeme = array_lexemes[index][0]
     if lexeme == "WAZZUP":
+        this_line = array_lexemes[index][2]
         consume(lexeme)
         # Variable declarations
         while index < lexemes_length and array_lexemes[index][0] == "I HAS A":
             parse_variable_declaration()
         # Delimter
-        consume("BUHBYE")
+        if index < lexemes_length and array_lexemes[index][0] == "BUHBYE":
+            consume("BUHBYE")
+        else:
+            add_error(this_line, "Expecting BUHBYE.")
 
 # <variable_declaration> ::= I HAS A varident | I HAS A varident ITZ <expr>
 def parse_variable_declaration():
@@ -496,6 +541,7 @@ def parse_variable_declaration():
     lexeme = array_lexemes[index][0]
     # I HAS A
     if lexeme == "I HAS A":
+        this_line = array_lexemes[index][2]
         consume(lexeme)
         # var_ident
         if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
@@ -504,12 +550,15 @@ def parse_variable_declaration():
             # ITZ
             if index < lexemes_length and array_lexemes[index][0] == "ITZ":
                 consume("ITZ")
-                # expr
-                symbol_table.append([variable, parse_expression()])
+                if array_lexemes[index-1][2] == array_lexemes[index][2]:
+                    # expr
+                    symbol_table.append([variable, parse_expression()])
+                else:
+                    add_error(this_line, f"Missing expression at end of line.")
             else:
                 symbol_table.append([variable, "NOOB"])
         else:
-            print(f"Error: Unexpected token '{array_lexemes[index][0]}' found while parsing variable declaration.")
+            add_error(this_line, f"Error: Unexpected token '{array_lexemes[index][0]}' found while parsing variable declaration.")
 
 # ===================================================================== BOOLEAN OPERATIONS =====================================================================
 # <boolean_op> :: = BOTH OF <expr> AN <expr> | EITHER OF <expr> AN <expr> | WON OF <expr> AN <expr> | NOT <expr> | ALL OF <expr> MKAY | ANY OF <expr> MKAY
@@ -522,6 +571,7 @@ def parse_boolean_operations():
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
     if lexeme_type == KW_BOOLEAN:
+        this_line = array_lexemes[index][2]
         operator = lexeme
         consume(lexeme)
 
@@ -578,7 +628,7 @@ def parse_boolean_operations():
             elif operator == "ANY OF":
                 return any(operands)
         else:
-            print(f"Unknown arithmetic operation: {operator}")
+            add_error(this_line, f"Unknown arithmetic operation: {operator}")
 
 # ===================================================================== COMPARISON OPERATIONS =====================================================================
 # <comparison_op> ::= BOTH SAEM <expr> AN <expr> | DIFFRINT <expr> AN <expr>
@@ -592,6 +642,7 @@ def parse_comparison_operations():
     lexeme_type = array_lexemes[index][1]
 
     if lexeme_type == KW_COMPARISON:
+        this_line = array_lexemes[index][2]
         operator = lexeme
         consume(lexeme)
         # Operand 1
@@ -610,7 +661,7 @@ def parse_comparison_operations():
         elif operator == "SMALLR OF": 
             return min(operand1, operand2)
         else:
-            print(f"Unknown boolean operation: {operator}")
+            add_error(this_line, f"Unknown boolean operation: {operator}")
 
 # ===================================================================== CONTROL FLOW =====================================================================
 #<if-then> ::= <expr><linebreak>O RLY?<linebreak>YA RLY<linebreak> <code_block> <linebreak> <else-if>* <linebreak> NO WAI <linebreak> <code_block> <linebreak>OIC
@@ -641,16 +692,20 @@ def parse_if_else_statements():  # Note: NO MEBBE YET
             consume("YA RLY")
             while (index < lexemes_length and array_lexemes[index][0] not in ["NO WAI", "OIC"]):
                 parse_expression()
-        
+        else:
+            add_error(array_lexemes[index][2], "Expecting YA RLY statement.")
+
         if array_lexemes[index][0] == "NO WAI":
             no_wai_line_number = array_lexemes[index][2]
             consume("NO WAI")
             while (index < lexemes_length and array_lexemes[index][0] != "OIC"):
                 parse_expression()
-            
+    
         # Delimter
         if array_lexemes[index][0] == "OIC":
             consume("OIC")
+        else:
+            add_error(array_lexemes[index][2], "Expecting YA RLY statement.")
 
         # reset these after parsing the function
         output_array = copy.deepcopy(init_output_array)
@@ -729,7 +784,7 @@ def parse_switch_case_statement():
                     consume("GTFO")
 
             else:
-                print(f"Unexpected token {curr_lexeme} in WTF? statement.")
+                add_error(array_lexemes[index][2], f"Unexpected token {curr_lexeme} in WTF? statement.")
                 break
         output_array = copy.deepcopy(init_output_array)
         symbol_table = copy.deepcopy(init_symbol_table)
@@ -737,69 +792,7 @@ def parse_switch_case_statement():
         execute_switch(semantic_indx)
         status = SYNTAX
 
-def execute_switch(semantic_index):
-    global index
-    global array_lexemes
-    global symbol_table
-    global output_array
-    global it 
 
-    condition = it
-    matched = False
-
-    index_backup = index  
-    index = semantic_index
-
-    if isinstance(array_lexemes[index-1][0], str):  # check if the lexeme is a string(variable),
-        condition = get_variable_value(array_lexemes[index-1][0]) # get its value
-
-    consume("WTF?")  
-    while index < lexemes_length : 
-        curr_lexeme = array_lexemes[index][0]
-        print(f"current lexeme: {curr_lexeme}")
-        if curr_lexeme == "OIC":
-            consume("OIC")
-            break
-
-        elif curr_lexeme == "OMG":
-            consume("OMG")
-            
-            if index < lexemes_length and array_lexemes[index][1] in [LIT_YARN, LIT_NUMBR, LIT_NUMBAR, LIT_TROOF, ID_VAR]:
-                case_value = array_lexemes[index][0]
-                if condition == int(case_value) and not matched:      
-                    print("matched")
-                    matched = True
-                    consume(case_value)
-                    print(case_value)
-                    
-                    # execute the block
-                    while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG", "OMGWTF"]):
-                        parse_expression() 
-                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
-                        consume("GTFO")
-                    break
-                else:
-                    consume(case_value)
-                    while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG", "OMGWTF"]):
-                        index += 1
-                    
-                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
-                        consume("GTFO")
-
-        elif curr_lexeme == "OMGWTF": # default case
-            if not matched:
-                consume("OMGWTF")
-                while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
-                    parse_expression()
-                
-                if index < lexemes_length and array_lexemes[index][0] == "GTFO":
-                    consume("GTFO")
-                break
-
-    # Restore the index
-    index = index_backup
-
-    
 # <loop> ::= IM IN YR <label> operation YR varident (<til_op> | <wile_op>) <linebreak> <code_block><linebreak> IM OUTTA YR <label>
 def parse_loop():
     global index
@@ -838,7 +831,7 @@ def parse_loop():
 
             if (condition_type == "WILE" and condition_met) or (condition_type == "TIL" and not condition_met):
                 var_value = get_variable_value(varident)
-                parse_block()
+                parse_expression()
                 if operation == "NERFIN":
                     var_value -= 1
                 else:
@@ -848,7 +841,6 @@ def parse_loop():
             else:
                 index= continue_index
                 break
-
 
         if array_lexemes[index][0] == "IM OUTTA YR":
             consume("IM OUTTA YR")
@@ -881,7 +873,7 @@ def parse_function():
             if check_function_name(function_name):
                 consume(array_lexemes[index][0])  
                 # YR
-                if index < lexemes_length and array_lexemes[index][0] == "YR":
+                if index < lexemes_length and array_lexemes[index][0] == "YR" and array_lexemes[index+1][1] == ID_VAR:
                     consume(array_lexemes[index][0])  
                     # <parameters> 
                     function_args = []
@@ -893,18 +885,28 @@ def parse_function():
                             consume(array_lexemes[index][0])
                             if index < lexemes_length and array_lexemes[index][0] == "YR":
                                 consume(array_lexemes[index][0])
+                            else:
+                                add_error(array_lexemes[index][2], "Missing YR after AN.")
                         else:
                             functions_array.append([function_name, function_index, function_args])
                             break
-                # <function_body>
-                parse_function_body()
-                # <return_statement>
-                parse_function_return()
-                # IF U SAY SO
-                if index < lexemes_length and array_lexemes[index][0] == "IF U SAY SO":
-                    consume(array_lexemes[index][0])
+
+                    # <function_body>
+                    parse_function_body()
+                    # <return_statement>
+                    parse_function_return()
+
+                    # IF U SAY SO
+                    if index < lexemes_length and array_lexemes[index][0] == "IF U SAY SO":
+                        consume(array_lexemes[index][0])
+                    else:
+                        add_error(array_lexemes[index][2], "Error, IF U SAY SO missing.")
+                else:
+                    add_error(array_lexemes[index][2], "Error, parameter missing after YR.")
+            else:
+                add_error(array_lexemes[index][2], "Error, function name already existing")
         else:
-            print("Error, function name is missing")
+            add_error(array_lexemes[index][2], "Error, function name is missing")
 
     # reset these after parsing the function
     output_array = copy.deepcopy(init_output_array)
@@ -975,13 +977,11 @@ def parse_function_call():
                                         symbol_table.append([variable, parse_expression()])
                                         func_args_length += 1
                                     else:
-                                        print("Error: More arguments than function parameters")
+                                        add_error(array_lexemes[index][2], "Error: More arguments than function parameters")
                                 else:
-                                    print("Error: Missing parameter after YR")
-                                    return()
+                                    add_error(array_lexemes[index][2], "Error: Missing parameter after YR")
                             else:
-                                print("Error: Missing YR after AN")
-                                return()
+                                add_error(array_lexemes[index][2], "Error: Missing YR after AN")
                         
                         # Execute function if equal number of parameters and arguments
                         if func_param_length == func_args_length:
@@ -990,13 +990,10 @@ def parse_function_call():
                             status = SYNTAX
                         elif func_args_length > func_param_length:
                             print("Error: More arguments than function parameters")
-                            exit()
                         else:
-                            print("Error: Missing arguments")
-                            exit()
+                            add_error(array_lexemes[index][2], "Error: Missing arguments")
             else:
-                print(f"Error: Function '{function_name}' not found or declared")
-                exit()
+                add_error(array_lexemes[index][2], f"Error: Function '{function_name}' not found or declared")
     
     # Reset 
     symbol_table[1:] = copy.deepcopy(copy_symbol_table)
@@ -1031,17 +1028,22 @@ def sem_execute_function(temp_index):
                         consume(array_lexemes[index][0])
                         if index < lexemes_length and array_lexemes[index][0] == "YR":
                             consume(array_lexemes[index][0])
+                        else:
+                            add_error(array_lexemes[index][2], "Missing YR after AN")
                     else:
                         break
                 # <function_body>
                 parse_function_body()
                 # <return_statement>
                 parse_function_return()
+
                 # IF U SAY SO
                 if index < lexemes_length and array_lexemes[index][0] == "IF U SAY SO":
                     consume(array_lexemes[index][0])
+                else:
+                    add_error(array_lexemes[index][2], "Missing IF U SAY SO.")
         else:
-            print("Error, function name is missing")
+            add_error(array_lexemes[index][2],"Error, function name is missing")
 
     # Jump back
     index = init_index
@@ -1077,7 +1079,69 @@ def sem_execute_if_else_statement(temp_index, no_wai_line_number):
                 consume(array_lexemes[index][0])
                 while array_lexemes[index][0] != "OIC":
                     parse_expression()
-        
+
+def execute_switch(semantic_index):
+    global index
+    global array_lexemes
+    global symbol_table
+    global output_array
+    global it 
+
+    condition = it
+    matched = False
+
+    index_backup = index  
+    index = semantic_index
+
+    if isinstance(array_lexemes[index-1][0], str):  # check if the lexeme is a string(variable),
+        condition = get_variable_value(array_lexemes[index-1][0]) # get its value
+
+    consume("WTF?")  
+    while index < lexemes_length : 
+        curr_lexeme = array_lexemes[index][0]
+        print(f"current lexeme: {curr_lexeme}")
+        if curr_lexeme == "OIC":
+            consume("OIC")
+            break
+
+        elif curr_lexeme == "OMG":
+            consume("OMG")
+            
+            if index < lexemes_length and array_lexemes[index][1] in [LIT_YARN, LIT_NUMBR, LIT_NUMBAR, LIT_TROOF, ID_VAR]:
+                case_value = array_lexemes[index][0]
+                if condition == int(case_value) and not matched:      
+                    print("matched")
+                    matched = True
+                    consume(case_value)
+                    print(case_value)
+                    
+                    # execute the block
+                    while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG", "OMGWTF"]):
+                        parse_expression() 
+                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+                        consume("GTFO")
+                    break
+                else:
+                    consume(case_value)
+                    while (index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC", "OMG", "OMGWTF"]):
+                        index += 1
+                    
+                    if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+                        consume("GTFO")
+
+        elif curr_lexeme == "OMGWTF": # default case
+            if not matched:
+                consume("OMGWTF")
+                while index < lexemes_length and array_lexemes[index][0] not in ["GTFO", "OIC"]:
+                    parse_expression()
+                
+                if index < lexemes_length and array_lexemes[index][0] == "GTFO":
+                    consume("GTFO")
+                break
+
+    # Restore the index
+    index = index_backup
+
 # ------------------- HELPER FUNCTIONS -------------------
 # Function for returning symbol table value
 def get_variable_value(var_name):
@@ -1113,7 +1177,7 @@ def parse_value(value):
         if value.startswith('"') and value.endswith('"'):
             value = value[1:-1]
     except ValueError:
-        pass      
+        return     
     return value
 
 # Function for updating the symbol table
@@ -1168,14 +1232,9 @@ def recast_variable_value(variable, new_type):
     print(f"Variable '{variable}' not found in symbol table.")
 
 # Helper to add error messages
-def add_error(message):
-    global lexemes_length
-
-    if index < lexemes_length:
-        lexeme = array_lexemes[index]
-        errors.append(f"Error at token '{lexeme[0]}': {message}")
-    else:
-        errors.append(f"Error at end of input: {message}")
+def add_error(line, message):
+    global errors
+    errors.append(f"Error at line {line}: {message}")
 
 # Checks if function name exists
 def check_function_name(function_name):
@@ -1237,5 +1296,15 @@ def display_output(output_array):
     
     for output in output_array:
         print(output)
+    print("=" * 30)
+
+def display_errors(error_array):
+
+    print(" " * 12, end="")
+    print("Errors")
+    print("-" * 30)
+    
+    for error in error_array:
+        print(error)
     print("=" * 30)
 

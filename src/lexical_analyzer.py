@@ -268,6 +268,8 @@ def lexemes_matcher (line, code):
         token_list.append(variable)
         token_list.append(ID_VAR)
     
+    else:
+        return "Error"
     
     if code == 0:
         return token_list
@@ -283,7 +285,7 @@ def lexemes_init(lines, disp_lexemes):
     # token_dict = {}
     lexemes = []
     OBTW_flag = False
-    line_number = 0
+    line_number = 1
     # Per line of the code
     for line in lines:
         line = line.strip()
@@ -294,30 +296,32 @@ def lexemes_init(lines, disp_lexemes):
             # If a comment:
             else:
                 token = lexemes_matcher(line, 1)
-            if token != []:
-                # Trim the quotes of the yarn
-                if (token[1] == LIT_YARN):
-                    lexemes.append((token[0].rstrip().strip('"'), token[1].strip(), line_number))
+
+            if token != "Error":
+                if token != []:
+                    # Trim the quotes of the yarn
+                    if (token[1] == LIT_YARN):
+                        lexemes.append((token[0].rstrip().strip('"'), token[1].strip(), line_number))
+                    else:
+                        lexemes.append((token[0].strip(), token[1].strip(), line_number))
+                    if token[0] == "BTW":
+                        # Everything after 'BTW' is a comment
+                        lexemes.append((line.replace(token[0], "", 1).strip(), COMMENT, line_number))
+                        line = ""
+                    # Raise flag if OBTW is read
+                    elif token[0] == "OBTW":
+                        OBTW_flag = True
+                    elif token[0] == "TLDR":
+                        OBTW_flag = False
+                    line = line.replace(token[0], "", 1).strip()
                 else:
-                    lexemes.append((token[0].strip(), token[1].strip(), line_number))
-                if token[0] == "BTW":
-                    # Everything after 'BTW' is a comment
-                    lexemes.append((line.replace(token[0], "", 1).strip(), COMMENT, line_number))
-                    line = ""
-                # Raise flag if OBTW is read
-                elif token[0] == "OBTW":
-                    OBTW_flag = True
-                elif token[0] == "TLDR":
-                    OBTW_flag = False
-                line = line.replace(token[0], "", 1).strip()
+                    break  
             else:
-                break   
+                return "Error"
+            
         line_number += 1
 
-    # for key, value in token_dict.items():
-    #     print(f"{key} \t\t {value}")
-    #     disp_lexemes.insert("", "end", values=(key, value))
-        
+
     # Clear the Treeview before inserting new data
     for item in disp_lexemes.get_children():
         disp_lexemes.delete(item)
