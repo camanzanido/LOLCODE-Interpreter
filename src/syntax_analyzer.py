@@ -592,45 +592,57 @@ def parse_boolean_operations():
     global symbol_table
     global output_array
     global lexemes_length
+    
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
+    print(f"Current operation: {lexeme}, index: {index}")
+    
     if lexeme_type == KW_BOOLEAN:
         this_line = array_lexemes[index][2]
         operator = lexeme
         consume(lexeme)
+        
+        operands = []
 
         operand1 = operand()
-        operand2 = None
-
-        # AN 
-        if index < lexemes_length and array_lexemes[index][0] == "AN":
+        operands.append(operand1) 
+        if index < lexemes_length and array_lexemes[index][0] == "AN" and operator != "NOT":
             consume("AN")
+           
             operand2 = operand()
+            operands.append(operand2)
+        else:
+            operand2 = None
+        
         if operator == "BOTH OF":
             if operand2 is not None:
-                return operand1 and operand2
-            print("No second Operand")
+                if operand1 == operand2 and operand1 == "WIN": val = "WIN"
+                else: val = "FAIL"
+                return val
+            add_error(this_line, f"line: {this_line}: No second Operand")
+        
         elif operator == "EITHER OF":
             if operand2 is not None:
-                return operand1 or operand2
-            print("No second Operand")
-
+                if operand1 == "WIN" or operand2 == "WIN": val = "WIN"
+                else: val = "FAIL"
+                return val
+            add_error(this_line, f"line: {this_line}: No second Operand")
+        
         elif operator == "WON OF":
             if operand2 is not None:
-                return bool(operand1) ^ bool(operand2)
-            print("No second Operand")
-
-        elif operator == "NOT":
-            return not operand1
+                if operand1 == operand2: val = "FAIL"
+                else: val = "WIN"
+                print("won:", val)
+                return val
+            add_error(this_line, f"line: {this_line}: No second Operand")
         
-        # since ALL OF & ANY OF cannot be nested, separate to other boolean operations that can be nested
+        elif operator == "NOT":
+            if operand1 == "WIN": val = "FAIL"
+            else: val = "WIN"
+            return val
+        
         elif operator in ["ALL OF", "ANY OF"]:
-            operands = []  
-            print(f"Parsing {operator}")
-
-            # Collect all operands until "MKAY"
             while index < lexemes_length and array_lexemes[index][0] != "MKAY":
-                
                 if array_lexemes[index][0] == "AN":
                     consume("AN")
                 
@@ -641,19 +653,24 @@ def parse_boolean_operations():
                 operand_value = operand()
                 if operand_value is not None:
                     operands.append(operand_value)
-
             
             if index < lexemes_length and array_lexemes[index][0] == "MKAY":
                 consume("MKAY")  
 
-            # Perform the operation
             if operator == "ALL OF":
-                return all(operands)
+                for op in operands: 
+                    if op != "WIN":
+                        return "FAIL"
+                return "WIN"
+            
             elif operator == "ANY OF":
-                return any(operands)
+                for op in operands:
+                    if op == "WIN":
+                        return "WIN"
+                return "FAIL"
+        
         else:
             add_error(this_line, f"Unknown arithmetic operation: {operator}")
-
 # ===================================================================== COMPARISON OPERATIONS =====================================================================
 # <comparison_op> ::= BOTH SAEM <expr> AN <expr> | DIFFRINT <expr> AN <expr>
 def parse_comparison_operations():
