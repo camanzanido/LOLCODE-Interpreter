@@ -42,7 +42,7 @@ def execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box):
     # Initialize lexemes and process the syntax
     lexemes = lexemes_init(text_editor.get("1.0", tk.END).splitlines(), disp_lexemes)
     if lexemes != "Error":
-        syntax_analyzer_result = syntax_analyzer(lexemes)
+        syntax_analyzer_result = syntax_analyzer(lexemes, console_box)
         symbol_table = syntax_analyzer_result[0]
         output_array = syntax_analyzer_result[1]
         errors_array = syntax_analyzer_result[2]
@@ -50,15 +50,8 @@ def execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box):
         if len(errors_array) == 0:
             for identifier, value in symbol_table:
                 disp_symbolTable.insert("", tk.END, values=(identifier, value))
-        
-            console_box.config(state=tk.NORMAL)
-
-            for output in output_array:
-                console_box.insert(tk.END, f"{output}\n")
-            console_box.config(state=tk.DISABLED)
         else:
             console_box.config(state=tk.NORMAL)
-
             for error in errors_array:
                 console_box.insert(tk.END, f"{error}\n")
             console_box.config(state=tk.DISABLED)

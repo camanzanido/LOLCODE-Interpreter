@@ -1,5 +1,6 @@
 
 from input_gui import ask_input
+import tkinter as tk 
 from src.keyword_classifiers import *
 import copy
 
@@ -21,14 +22,16 @@ functions_array = []
 output_array = []
 errors = []
 
+console_box = None
 
-def syntax_analyzer(lexemes):
+def syntax_analyzer(lexemes, console_box_fromMain):
     global index
     global array_lexemes
     global symbol_table
     global output_array
     global lexemes_length
     global errors
+    global console_box
 
     # Reset the variables
     array_lexemes = []
@@ -44,6 +47,7 @@ def syntax_analyzer(lexemes):
     # Remove comments from the lexemes
     array_lexemes = comments_remover(lexemes)
     lexemes_length = len(array_lexemes)
+    console_box = console_box_fromMain
     # Start parsing the program
     parse_program()
     print("========== Syntax analysis done! ==========")
@@ -111,7 +115,9 @@ def parse_block():
         lexeme_type = array_lexemes[index][1]
         # <output>
         if lexeme == "VISIBLE":
+            status = SEMANTICS
             parse_output()
+            status = SYNTAX
         # <variable_declarations> 
         elif lexeme == "WAZZUP":
             parse_variable_declarations()
@@ -148,84 +154,6 @@ def parse_block():
             add_error(array_lexemes[index][2], f"Unexpected token '{lexeme}'")
             break
     
-        
-# ===================================================================== INPUT/OUTPUT =====================================================================
-
-# <input> ::= GIMMEH <var_ident> 
-def parse_input():
-    global index
-    global array_lexemes
-    global symbol_table
-    global output_array
-    global lexemes_length
-    global status
-
-    lexeme = array_lexemes[index][0]
-
-    ## try to print visible in  the input gui 
-    # while lexeme == "VISIBLE":
-    #     display_text = array_lexemes[index][1]  # get visble
-    #     print(display_text)
-    #     consume(lexeme)
-    #     if index < lexemes_length:
-    #         lexeme = array_lexemes[index][0]
-
-    # GIMMEH
-    if lexeme == "GIMMEH":
-        this_line = array_lexemes[index][2]
-        consume(lexeme)
-        # Variable Identifier
-        if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
-            variable = array_lexemes[index][0]
-            consume(array_lexemes[index][0])
-            if status == SEMANTICS:
-                # # Ask for an input in the terminal
-                # value = input(f"{variable}: ")
-                # parsed_value = parse_value(value)
-                # update_IT(parsed_value)
-                # # Update the symbol table
-                # update_variable_value(variable, parsed_value)
-                # # parse_input_with_window(variable)
-                user_input = ask_input(variable)
-                if user_input is not None:
-                    parsed_value = parse_value(user_input)
-                    update_variable_value(variable, parsed_value)
-                    update_IT(parsed_value)
-                else:
-                    add_error(this_line, "Input was cancelled or invalid.")
-        else:
-            add_error(this_line, "Expected 'GIMMEH' to read input or variable")
-
-# <output> ::= VISIBLE <expression> [AN <expression>...]
-def parse_output():
-    global index
-    global array_lexemes
-    global symbol_table
-    global output_array
-    global lexemes_length
-    lexeme = array_lexemes[index][0]
-    # VISIBLE
-    if lexeme == "VISIBLE":
-        this_line = index
-        consume(lexeme)
-        string_to_print = ""
-        executed = False
-        # Parse the expression until there is AN
-        while index < lexemes_length and array_lexemes[index][2] == array_lexemes[this_line][2]:
-            string_to_print += str(parse_expression())
-            executed = True
-            # AN
-            if index < lexemes_length and array_lexemes[index][0] == "AN":
-                consume(array_lexemes[index][0])
-            else:
-                # Append the string to the output array
-                output_array.append(string_to_print)
-                update_IT(string_to_print)
-                break
-        if not executed:
-            add_error(array_lexemes[index][2], "Expected expression after VISIBLE.")
-        
-
 # ===================================================================== EXPRESSIONS =====================================================================
 # <expression> ::= <variable> | <literals> | <arithmetic_op> | <input> | <output> | <smoosh> | <boolean_op>
 #                  <comparison_op> | <conditional_statement> | <function_call>
@@ -296,6 +224,89 @@ def parse_expression():
     else:
         add_error(this_line, "Invalid expression")
 
+# ===================================================================== INPUT/OUTPUT =====================================================================
+
+# <input> ::= GIMMEH <var_ident> 
+def parse_input():
+    global index
+    global array_lexemes
+    global symbol_table
+    global output_array
+    global lexemes_length
+    global status
+
+    lexeme = array_lexemes[index][0]
+
+    ## try to print visible in  the input gui 
+    # while lexeme == "VISIBLE":
+    #     display_text = array_lexemes[index][1]  # get visble
+    #     print(display_text)
+    #     consume(lexeme)
+    #     if index < lexemes_length:
+    #         lexeme = array_lexemes[index][0]
+
+    # GIMMEH
+    if lexeme == "GIMMEH":
+        this_line = array_lexemes[index][2]
+        consume(lexeme)
+        # Variable Identifier
+        if index < lexemes_length and array_lexemes[index][1] == ID_VAR:
+            variable = array_lexemes[index][0]
+            consume(array_lexemes[index][0])
+            if status == SEMANTICS:
+                # # Ask for an input in the terminal
+                # value = input(f"{variable}: ")
+                # parsed_value = parse_value(value)
+                # update_IT(parsed_value)
+                # # Update the symbol table
+                # update_variable_value(variable, parsed_value)
+                # # parse_input_with_window(variable)
+                user_input = ask_input(variable)
+                if user_input is not None:
+                    parsed_value = parse_value(user_input)
+                    update_variable_value(variable, parsed_value)
+                    update_IT(parsed_value)
+                else:
+                    add_error(this_line, "Input was cancelled or invalid.")
+        else:
+            add_error(this_line, "Expected 'GIMMEH' to read input or variable")
+
+# <output> ::= VISIBLE <expression> [AN <expression>...]
+def parse_output():
+    global index
+    global array_lexemes
+    global symbol_table
+    global output_array
+    global lexemes_length
+    global console_box
+
+    lexeme = array_lexemes[index][0]
+    # VISIBLE
+    if lexeme == "VISIBLE":
+        this_line = index
+        consume(lexeme)
+        string_to_print = ""
+        executed = False
+        # Parse the expression until there is AN
+        while index < lexemes_length and array_lexemes[index][2] == array_lexemes[this_line][2]:
+            string_to_print += str(parse_expression())
+            executed = True
+            # AN
+            if index < lexemes_length and array_lexemes[index][0] == "AN":
+                consume(array_lexemes[index][0])
+            else:
+                if status == SEMANTICS:
+                    # Append the string to the output array
+                    output_array.append(string_to_print)
+                    console_box.config(state=tk.NORMAL)
+                    console_box.insert(tk.END, f"{string_to_print}\n")
+                    console_box.see(tk.END)  
+                    console_box.config(state=tk.DISABLED)
+                    update_IT(string_to_print)
+                break
+        if not executed:
+            add_error(array_lexemes[index][2], "Expected expression after VISIBLE.")
+        
 # ===================================================================== ARITHMETHIC OPERATIONS =====================================================================
 # <arithmethic> ::= <operations> <literal|var_indent|arithmethic> AN <literal|var_indent|arithmethic>
 def parse_arithmethic_operations():
@@ -675,10 +686,7 @@ def parse_if_else_statements():  # Note: NO MEBBE YET
     global output_array
     global symbol_table
     
-    # store initial values
-    init_output_array = copy.deepcopy(output_array)
-    init_symbol_table = copy.deepcopy(symbol_table)
-
+    status = SYNTAX
     lexeme = array_lexemes[index][0]
     # condition = []          
     # condition.append(it) 
@@ -707,10 +715,6 @@ def parse_if_else_statements():  # Note: NO MEBBE YET
         else:
             add_error(array_lexemes[index][2], "Expecting YA RLY statement.")
 
-        # reset these after parsing the function
-        output_array = copy.deepcopy(init_output_array)
-        symbol_table = copy.deepcopy(init_symbol_table)
-
         last_index = index
         status = SEMANTICS
         sem_execute_if_else_statement(init_index, no_wai_line_number)
@@ -726,8 +730,8 @@ def parse_switch_case_statement():
     global lexemes_length
     global status
 
-    init_output_array = copy.deepcopy(output_array)
-    init_symbol_table = copy.deepcopy(symbol_table)
+    status = SYNTAX
+
     lexeme = array_lexemes[index][0]
     semantic_indx  = index
 
@@ -786,10 +790,8 @@ def parse_switch_case_statement():
             else:
                 add_error(array_lexemes[index][2], f"Unexpected token {curr_lexeme} in WTF? statement.")
                 break
-        output_array = copy.deepcopy(init_output_array)
-        symbol_table = copy.deepcopy(init_symbol_table)
         status = SEMANTICS
-        execute_switch(semantic_indx)
+        sem_execute_switch(semantic_indx)
         status = SYNTAX
 
 
@@ -800,8 +802,10 @@ def parse_loop():
     global symbol_table
     global output_array
     global lexemes_length
+    global status
     lexeme = array_lexemes[index][0]
-    
+
+    status = SEMANTICS
     if lexeme == "IM IN YR":
         consume("IM IN YR")
         label = array_lexemes[index][0]
@@ -810,7 +814,7 @@ def parse_loop():
         # UPPIN or NERFIN
         operation = array_lexemes[index][0]
         if operation not in ["UPPIN", "NERFIN"]:
-            print(f"Expected 'UPPIN' or 'NERFIN', found {operation}")
+            add_error(array_lexemes[index][2], f"Expected 'UPPIN' or 'NERFIN', found {operation}")
         consume(operation)
         consume("YR")
         varident = array_lexemes[index][0]
@@ -819,7 +823,7 @@ def parse_loop():
         # WILE or TIL
         condition_type = array_lexemes[index][0]
         if condition_type not in ["WILE", "TIL"]:
-            print(f"Expected 'WILE' or 'TIL', found {condition_type}")
+            add_error(array_lexemes[index][2], f"Expected 'WILE' or 'TIL', found {condition_type}")
         consume(condition_type)
 
         comp_index = index # will hold the starting index of the comparison
@@ -845,16 +849,17 @@ def parse_loop():
         if array_lexemes[index][0] == "IM OUTTA YR":
             consume("IM OUTTA YR")
             consume(label)
+
+    status = SYNTAX
         
 # ===================================================================== FUNCTIONS =====================================================================
 # <function> ::= HOW IZ I func_ident <parameters> <function_body> <return_statement> IF U SAY SO
 def parse_function():
     global output_array
     global symbol_table
-    
-    # store initial values
-    init_output_array = copy.deepcopy(output_array)
-    init_symbol_table = copy.deepcopy(symbol_table)
+    global status
+
+    status = SYNTAX
 
     global index
     global array_lexemes
@@ -908,10 +913,6 @@ def parse_function():
         else:
             add_error(array_lexemes[index][2], "Error, function name is missing")
 
-    # reset these after parsing the function
-    output_array = copy.deepcopy(init_output_array)
-    symbol_table = copy.deepcopy(init_symbol_table)
-
 
     # <function_body>
 def parse_function_body():
@@ -942,8 +943,9 @@ def parse_function_call():
     return_value = "NOOB"
     
     # Initial symbol table
-    copy_symbol_table = copy.deepcopy(symbol_table[1:])
+    symbol_table_index = len(symbol_table)
 
+    status = SYNTAX
     # I IZ
     if lexeme == "I IZ":  
         consume(lexeme)
@@ -996,7 +998,8 @@ def parse_function_call():
                 add_error(array_lexemes[index][2], f"Error: Function '{function_name}' not found or declared")
     
     # Reset 
-    symbol_table[1:] = copy.deepcopy(copy_symbol_table)
+    symbol_table = symbol_table[:symbol_table_index]
+    status = SYNTAX
     return return_value
 
 # ======================================================== SEMANTICS ANALYSIS FUNCTIONS ======================================================== 
@@ -1008,6 +1011,7 @@ def sem_execute_function(temp_index):
     global symbol_table
     global output_array
     global lexemes_length
+    global status
     # Store initial index
     init_index = index
     # Jump to the function
@@ -1032,10 +1036,13 @@ def sem_execute_function(temp_index):
                             add_error(array_lexemes[index][2], "Missing YR after AN")
                     else:
                         break
+
+                status = SEMANTICS
                 # <function_body>
                 parse_function_body()
                 # <return_statement>
                 parse_function_return()
+                status = SYNTAX
 
                 # IF U SAY SO
                 if index < lexemes_length and array_lexemes[index][0] == "IF U SAY SO":
@@ -1080,7 +1087,7 @@ def sem_execute_if_else_statement(temp_index, no_wai_line_number):
                 while array_lexemes[index][0] != "OIC":
                     parse_expression()
 
-def execute_switch(semantic_index):
+def sem_execute_switch(semantic_index):
     global index
     global array_lexemes
     global symbol_table
@@ -1183,11 +1190,13 @@ def parse_value(value):
 # Function for updating the symbol table
 def update_variable_value(variable, parsed_value):
     global symbol_table
+    global status
     for i in range(len(symbol_table)):
         if symbol_table[i][0] == variable:
             symbol_table[i][1] = parsed_value
             return
-    symbol_table.append([variable, parsed_value])
+    if status == SEMANTICS:
+        symbol_table.append([variable, parsed_value])
 
 def update_IT(value):
     global symbol_table
