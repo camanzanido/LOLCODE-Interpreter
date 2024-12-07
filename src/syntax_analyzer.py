@@ -2,8 +2,6 @@
 from input_gui import ask_input
 import tkinter as tk 
 from src.keyword_classifiers import *
-import copy
-
 
 # lexemes = [('flag', 'Variable Identifier'), ('ITZ', 'Variable Declaration'), ('WIN', 'TROOF Literal'), ....]
 
@@ -98,8 +96,9 @@ def parse_program():
         add_error(array_lexemes[index][2], "Expected 'HAI' at the start of the program")
 
 # <block> ::= <output> | <variable_declarations> | <input> | <variable_assignment>
-#            | <conditional_statement> | <switch_statement> | <function_statement>
-#            | <function_call> | <comparison_statement>
+#            | <conditional_statement> | <switch_statement> | <loop_statement>
+#            <function_statement>  | <function_call> | <comparison_statement>
+#           
 def parse_block():
     global index
     global array_lexemes
@@ -135,9 +134,12 @@ def parse_block():
         # <switch_statement>
         elif lexeme == "WTF?":
             parse_switch_case_statement()
-        #  <function_statement>
+        #  <loop_statement>
         elif lexeme == "IM IN YR":
+            status = SEMANTICS
             parse_loop()
+            status = SYNTAX
+        #  <function_statement>
         elif lexeme_type == ID_FUNC:
             parse_function()
         # <function_call> 
@@ -156,7 +158,7 @@ def parse_block():
     
 # ===================================================================== EXPRESSIONS =====================================================================
 # <expression> ::= <variable> | <literals> | <arithmetic_op> | <input> | <output> | <smoosh> | <boolean_op>
-#                  <comparison_op> | <conditional_statement> | <function_call>
+#                  <comparison_op> | <conditional_statement> | <function_call> | <loop_statement>
 def parse_expression():    
     global index
     global array_lexemes
@@ -166,8 +168,12 @@ def parse_expression():
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
     this_line = array_lexemes[index][2]
+
+    # <variable_assignment>
+    if lexeme_type == ID_VAR and array_lexemes[index+1][0] == "R":
+        parse_variable_reassignment()
     # <variable> | <literals>
-    if lexeme_type in [LIT_YARN, LIT_NUMBR, LIT_NUMBAR, LIT_TROOF, ID_VAR]:
+    elif lexeme_type in [LIT_YARN, LIT_NUMBR, LIT_NUMBAR, LIT_TROOF, ID_VAR]:
         consume(lexeme)
         # Typecasting the lexemes
         if lexeme_type == LIT_NUMBAR:
@@ -212,6 +218,9 @@ def parse_expression():
         value = parse_function_call()
         update_IT(value)
         return value
+    # <loop_statement>
+    elif lexeme == "IM IN YR":
+        parse_loop()
     elif lexeme == "IT":
         consume(lexeme)
         return symbol_table[0][1]
@@ -452,6 +461,7 @@ def parse_variable_reassignment():
     global symbol_table
     global output_array
     global lexemes_length
+    global status
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
 
@@ -484,6 +494,7 @@ def parse_type_casting(variable):
     global symbol_table
     global output_array
     global lexemes_length
+    global status 
     lexeme = array_lexemes[index][0]
     lexeme_type = array_lexemes[index][1]
     # <type_casting> ::= MAEK var_ident <literal> 
@@ -501,8 +512,9 @@ def parse_type_casting(variable):
                     lexeme = array_lexemes[index][0]
                     consume(array_lexemes[index][0])
                     # Update the symbol table given the new recasted value
-                    new_type_value = recast_variable_value(variable, lexeme)
-                    update_variable_value(variable, new_type_value)
+                    if status == SEMANTICS:
+                        new_type_value = recast_variable_value(variable, lexeme)
+                        update_variable_value(variable, new_type_value)
                 else:
                     add_error(this_line, "Expecting a LITERAL.")
             else:
@@ -515,9 +527,10 @@ def parse_type_casting(variable):
         if index < lexemes_length and array_lexemes[index][1] == LIT:
             lexeme = array_lexemes[index][0]
             consume(array_lexemes[index][0])
-                # Update the symbol table given the new recasted value
-            new_type_value = recast_variable_value(variable, lexeme)
-            update_variable_value(variable, new_type_value)
+            # Update the symbol table given the new recasted value
+            if status == SEMANTICS:
+                new_type_value = recast_variable_value(variable, lexeme)
+                update_variable_value(variable, new_type_value)
         else:
             add_error(this_line, "Expecting a LITERAL.")
 
@@ -805,7 +818,6 @@ def parse_loop():
     global status
     lexeme = array_lexemes[index][0]
 
-    status = SEMANTICS
     if lexeme == "IM IN YR":
         consume("IM IN YR")
         label = array_lexemes[index][0]
@@ -849,8 +861,6 @@ def parse_loop():
         if array_lexemes[index][0] == "IM OUTTA YR":
             consume("IM OUTTA YR")
             consume(label)
-
-    status = SYNTAX
         
 # ===================================================================== FUNCTIONS =====================================================================
 # <function> ::= HOW IZ I func_ident <parameters> <function_body> <return_statement> IF U SAY SO
