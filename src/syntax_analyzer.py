@@ -108,23 +108,24 @@ def parse_block():
     global status
     global errors
 
+
+
     # Parse line by line (by its first keyword)
     while index < lexemes_length and len(errors) == 0:
         lexeme = array_lexemes[index][0]
         lexeme_type = array_lexemes[index][1]
+
+        status = SEMANTICS
+        
         # <output>
         if lexeme == "VISIBLE":
-            status = SEMANTICS
             parse_output()
-            status = SYNTAX
         # <variable_declarations> 
         elif lexeme == "WAZZUP":
             parse_variable_declarations()
         # <input>    
-        elif lexeme == "GIMMEH":
-            status = SEMANTICS
+        elif lexeme == "GIMMEH":        
             parse_input()
-            status = SYNTAX
         # <variable_assignment>
         elif lexeme_type == ID_VAR:
             parse_variable_reassignment()
@@ -136,9 +137,7 @@ def parse_block():
             parse_switch_case_statement()
         #  <loop_statement>
         elif lexeme == "IM IN YR":
-            status = SEMANTICS
             parse_loop()
-            status = SYNTAX
         #  <function_statement>
         elif lexeme_type == ID_FUNC:
             parse_function()
@@ -155,6 +154,10 @@ def parse_block():
         else:
             add_error(array_lexemes[index][2], f"Unexpected token '{lexeme}'")
             break
+    
+        status = SYNTAX
+    
+
     
 # ===================================================================== EXPRESSIONS =====================================================================
 # <expression> ::= <variable> | <literals> | <arithmetic_op> | <input> | <output> | <smoosh> | <boolean_op>
