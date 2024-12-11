@@ -269,7 +269,7 @@ def lexemes_matcher (line, code):
         token_list.append(ID_VAR)
     
     else:
-        return "Error"
+        return ["Error", line]
     
     if code == 0:
         return token_list
@@ -297,7 +297,7 @@ def lexemes_init(lines, disp_lexemes):
             else:
                 token = lexemes_matcher(line, 1)
 
-            if token != "Error":
+            if token[0] != "Error":
                 if token != []:
                     # Trim the quotes of the yarn
                     if (token[1] == LIT_YARN):
@@ -317,7 +317,7 @@ def lexemes_init(lines, disp_lexemes):
                 else:
                     break  
             else:
-                return "Error"
+                return token
             
         line_number += 1
 

@@ -2,7 +2,7 @@ import re
 from symtable import SymbolTable
 from src.keyword_classifiers import *
 from src.lexical_analyzer import *
-from src.syntax_analyzer import *
+from src.syntax_semantics_analyzer import *
 import tkinter as tk 
 from tkinter import filedialog,ttk, simpledialog
 
@@ -41,7 +41,7 @@ def execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box):
 
     # Initialize lexemes and process the syntax
     lexemes = lexemes_init(text_editor.get("1.0", tk.END).splitlines(), disp_lexemes)
-    if lexemes != "Error":
+    if lexemes[0] != "Error":
         syntax_analyzer_result = syntax_analyzer(lexemes, console_box)
         symbol_table = syntax_analyzer_result[0]
         output_array = syntax_analyzer_result[1]
@@ -58,7 +58,7 @@ def execute_btn(text_editor, disp_lexemes, disp_symbolTable, console_box):
 
     else:
         console_box.config(state=tk.NORMAL)
-        console_box.insert(tk.END, f"Lexical Analysis Unsuccessfull!\n")
+        console_box.insert(tk.END, f"Lexical Analysis Unsuccessfull!: {lexemes[1]}\n")
         console_box.config(state=tk.DISABLED)
 
 

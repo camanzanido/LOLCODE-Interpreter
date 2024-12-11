@@ -1,5 +1,5 @@
 
-from input_gui import ask_input
+from src.input_gui import ask_input
 import tkinter as tk 
 from src.keyword_classifiers import *
 
@@ -79,7 +79,15 @@ def parse_program():
     # HAI
     if index < lexemes_length and array_lexemes[index][0] == "HAI":
         consume("HAI")
+        # Variable declarations
+        if index < lexemes_length and array_lexemes[index][0] == "WAZZUP":
+            parse_variable_declarations()
+        # Function declarations
+        while index < lexemes_length and len(errors) == 0 and array_lexemes[index][0] == "HOW IZ I":
+            print(array_lexemes[index][0])
+            parse_function()
         # CODE BLOCK
+        print(array_lexemes[index][0])
         parse_block()
         if not errors:
             if index < lexemes_length and array_lexemes[index][0] == "KTHXBYE":
@@ -89,7 +97,7 @@ def parse_program():
                     print((array_lexemes[index][2]) + 1, "NOTHING SHOULD BE AFTER KTHXBYE")
                     exit()
             else:
-                add_error(array_lexemes[index][2], "Expected 'KTHXBYE' to end the program")
+                add_error((array_lexemes[index-1][2])+1, "Expected 'KTHXBYE' to end the program")
         else:
             return()
     else:
@@ -108,21 +116,15 @@ def parse_block():
     global status
     global errors
 
-
-
     # Parse line by line (by its first keyword)
     while index < lexemes_length and len(errors) == 0:
         lexeme = array_lexemes[index][0]
         lexeme_type = array_lexemes[index][1]
 
         status = SEMANTICS
-        
         # <output>
         if lexeme == "VISIBLE":
             parse_output()
-        # <variable_declarations> 
-        elif lexeme == "WAZZUP":
-            parse_variable_declarations()
         # <input>    
         elif lexeme == "GIMMEH":        
             parse_input()
@@ -138,9 +140,6 @@ def parse_block():
         #  <loop_statement>
         elif lexeme == "IM IN YR":
             parse_loop()
-        #  <function_statement>
-        elif lexeme_type == ID_FUNC:
-            parse_function()
         # <function_call> 
         elif lexeme == "I IZ":
             parse_function_call()
